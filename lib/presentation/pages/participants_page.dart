@@ -46,10 +46,13 @@ class _ParticipantsPageState extends ConsumerState<ParticipantsPage> {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: isSelected ? Theme.of(builderContext).primaryColor : Colors.transparent,
-                          width: 2,
+                          color: isSelected 
+                          ? Theme.of(builderContext).colorScheme.primary 
+                          : Colors.transparent,
+                         width: 2,
                         ),
                         borderRadius: BorderRadius.circular(8),
+                        shape: BoxShape.rectangle,
                       ),
                       child: Text(emoji, style: const TextStyle(fontSize: 32)),
                     ),

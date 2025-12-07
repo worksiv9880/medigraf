@@ -195,7 +195,19 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 selectedDecoration: BoxDecoration(
                   border: Border.all(color: Colors.black, width: 2),
                   shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                defaultDecoration: BoxDecoration(
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                weekendDecoration: BoxDecoration(
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                outsideDecoration: BoxDecoration(
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(5),
                 ),
                 todayTextStyle: const TextStyle(color: Colors.black),
                 selectedTextStyle: const TextStyle(color: Colors.black),
@@ -276,9 +288,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isSelected ? Colors.black : Colors.transparent,
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(999),  // большой радиус = круг
         border: Border.all(
-          color: isSelected ? Colors.black : Colors.grey.shade300,
+           color: isSelected ? Colors.black : Colors.grey.shade300,
+           width: 2,
         ),
       ),
       child: Icon(
