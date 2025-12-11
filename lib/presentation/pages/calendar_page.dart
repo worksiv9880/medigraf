@@ -29,7 +29,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   @override
   void initState() {
     super.initState();
-    _selectedDay = _focusedDay;
+    _selectedDay = DateTime.now();
   }
 
   void _showAddEventDialog() {
@@ -44,7 +44,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final titleController = TextEditingController();
     final descController = TextEditingController();
     String category = 'general';
-    final categories = ['general', 'appointment', 'medication', 'symptom', 'exercise', 'diet'];
+    final categories = [
+      'general',
+      'appointment',
+      'medication',
+      'symptom',
+      'exercise',
+      'diet'
+    ];
 
     showDialog(
       context: context,
@@ -97,8 +104,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   HealthEventsCompanion(
                     participantId: drift.Value(selectedParticipant.id),
                     title: drift.Value(titleController.text.trim()),
-                    description: drift.Value(descController.text.trim().isEmpty 
-                        ? null : descController.text.trim()),
+                    description: drift.Value(descController.text.trim().isEmpty
+                        ? null
+                        : descController.text.trim()),
                     eventDate: drift.Value(_selectedDay ?? _focusedDay),
                     category: drift.Value(category),
                   ),
@@ -119,7 +127,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   @override
   Widget build(BuildContext context) {
     final selectedParticipant = ref.watch(selectedParticipantProvider);
-    final eventsAsync = selectedParticipant != null 
+    final eventsAsync = selectedParticipant != null
         ? ref.watch(healthEventsProvider(selectedParticipant.id))
         : const AsyncValue.data(<HealthEvent>[]);
 
@@ -154,7 +162,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               ],
             ),
           ),
-          
+
           // Calendar
           Container(
             color: Theme.of(context).cardColor,
@@ -188,9 +196,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               ),
               calendarStyle: CalendarStyle(
                 todayDecoration: BoxDecoration(
-                  border: Border.all(color: Colors.black, width: 2),
                   shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(5),
                 ),
                 selectedDecoration: BoxDecoration(
                   border: Border.all(color: Colors.black, width: 2),
@@ -209,14 +216,36 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   shape: BoxShape.rectangle,
                   borderRadius: BorderRadius.circular(5),
                 ),
-                todayTextStyle: const TextStyle(color: Colors.black),
+                todayTextStyle: const TextStyle(color: Colors.red),
                 selectedTextStyle: const TextStyle(color: Colors.black),
                 cellMargin: const EdgeInsets.all(4),
               ),
               eventLoader: (day) {
-                return eventsAsync.value?.where((e) => isSameDay(e.eventDate, day)).toList() ?? [];
+                return eventsAsync.value
+                        ?.where((e) => isSameDay(e.eventDate, day))
+                        .toList() ??
+                    [];
               },
               calendarBuilders: CalendarBuilders(
+                selectedBuilder: (context, day, focusedDay) {
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black, width: 2),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    alignment: Alignment.center,
+                    margin: const EdgeInsets.all(4),
+                    child: Text(
+                      '${day.day}',
+                      style: TextStyle(
+                        color: isSameDay(day, DateTime.now())
+                            ? Colors.red
+                            : Colors.black,
+                      ),
+                    ),
+                  );
+                },
                 markerBuilder: (context, day, events) {
                   if (events.isEmpty) return null;
                   final healthEvents = events.cast<HealthEvent>();
@@ -226,7 +255,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       height: 4,
                       width: 40,
                       decoration: BoxDecoration(
-                        color: categoryColors[healthEvents.first.category] ?? Colors.grey,
+                        color: categoryColors[healthEvents.first.category] ??
+                            Colors.grey,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -235,7 +265,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               ),
             ),
           ),
-          
+
           // Events List
           Expanded(
             child: eventsAsync.when(
@@ -249,8 +279,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                     child: Text(
                       'No events for ${DateFormat('MMM d').format(_selectedDay ?? _focusedDay)}',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.grey,
-                      ),
+                            color: Colors.grey,
+                          ),
                     ),
                   );
                 }
@@ -288,10 +318,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isSelected ? Colors.black : Colors.transparent,
-        borderRadius: BorderRadius.circular(999),  // большой радиус = круг
+        borderRadius: BorderRadius.circular(999), // большой радиус = круг
         border: Border.all(
-           color: isSelected ? Colors.black : Colors.grey.shade300,
-           width: 2,
+          color: isSelected ? Colors.black : Colors.grey.shade300,
+          width: 2,
         ),
       ),
       child: Icon(
