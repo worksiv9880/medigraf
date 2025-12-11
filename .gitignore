@@ -49,24 +49,17 @@ app.*.map.json
 **/generated_plugins.cmake
 
 # iOS
-ios/Flutter/App.framework
-ios/Flutter/Flutter.framework
-ios/Flutter/Flutter.podspec
-ios/Flutter/engine/
-ios/Flutter/*.xcframework
+ios/Flutter/
 ios/Runner/GeneratedPluginRegistrant.*
 ios/Pods/
 ios/Podfile.lock
 ios/.symlinks/
-ios/Flutter/ephemeral/
 
 # macOS
 macos/Pods/
 macos/Podfile.lock
 macos/.symlinks/
-macos/Flutter/ephemeral/
-macos/Flutter/Flutter.podspec
-macos/Flutter/engine/
+macos/Flutter/
 macos/Runner/GeneratedPluginRegistrant.*
 
 # Android Studio will place build artifacts here
@@ -81,14 +74,10 @@ android/gradlew.bat
 android/gradle/
 
 # Windows
-windows/flutter/ephemeral/
-windows/flutter/generated_plugin_registrant.cc
-windows/flutter/generated_plugins.cmake
+windows/flutter/
 
 # Linux
-linux/flutter/ephemeral/
-linux/flutter/generated_plugin_registrant.cc
-linux/flutter/generated_plugins.cmake
+linux/flutter/
 
 # Web
 web/.dart_tool/
