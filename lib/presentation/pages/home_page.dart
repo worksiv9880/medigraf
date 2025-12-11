@@ -106,31 +106,6 @@ class HomePage extends ConsumerWidget {
           child: Text('Error: $error'),
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        onDestinationSelected: (index) {
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              context.go('/participants');
-              break;
-            case 2:
-              context.go('/calendar');
-              break;
-            case 3:
-              context.go('/charts');
-              break;
-          }
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.people), label: 'Participants'),
-          NavigationDestination(icon: Icon(Icons.calendar_month), label: 'Calendar'),
-          NavigationDestination(icon: Icon(Icons.show_chart), label: 'Charts'),
-        ],
-      ),
     );
   }
 }
