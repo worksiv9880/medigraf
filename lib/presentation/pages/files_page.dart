@@ -1,106 +1,101 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import '../../core/di/providers.dart';
+import '../../data/datasources/local/app_database.dart';
+import '../../services/db_file_service.dart';
+import '../../services/file_service.dart';
+import 'file_card.dart';
+import 'files_header.dart';
 
-class FilesPage extends ConsumerWidget {
-  const FilesPage({super.key});
+class FilesPage extends StatefulWidget {
+  final int? participantId;
+
+  const FilesPage({
+    super.key,
+    required this.participantId,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final participantsAsync = ref.watch(participantsProvider);
+  State<FilesPage> createState() => _FilesPageState();
+}
 
+class _FilesPageState extends State<FilesPage> {
+  late final AppDatabase _db;
+  late final DbFileService _dbFileService;
+
+  late Future<List<DbFile>> _filesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _db = AppDatabase();
+    _dbFileService = DbFileService(_db, FileService());
+
+    _loadFiles();
+  }
+
+  void _loadFiles() {
+    _filesFuture = _db.getFiles();
+  }
+
+  Future<void> _uploadFromGallery() async {
+    await _dbFileService.addFromGallery(
+      participantId: widget.participantId,
+      title: 'New File',
+      type: 'GENERAL',
+    );
+    setState(_loadFiles);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('MediGraf'),
-      ),
-      body: participantsAsync.when(
-        data: (participants) {
-          if (participants.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.people_outline, size: 80, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No participants yet',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Add your first participant to get started',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () => context.push('/participants'),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Participant'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.2,
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            FilesHeader(
+              onUpload: _uploadFromGallery,
             ),
-            itemCount: participants.length + 1,
-            itemBuilder: (context, index) {
-              if (index == participants.length) {
-                return Card(
-                  child: InkWell(
-                    onTap: () => context.push('/participants'),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.add_circle_outline,
-                            size: 48, color: Theme.of(context).primaryColor),
-                        const SizedBox(height: 8),
-                        const Text('Add Participant'),
-                      ],
-                    ),
-                  ),
-                );
-              }
+            const SizedBox(height: 12),
+            Expanded(
+              child: FutureBuilder<List<DbFile>>(
+                future: _filesFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
 
-              final participant = participants[index];
-              return Card(
-                child: InkWell(
-                  onTap: () {
-                    ref.read(selectedParticipantProvider.notifier).state =
-                        participant;
-                    context.push('/calendar');
-                  },
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(participant.emoji,
-                          style: const TextStyle(fontSize: 48)),
-                      const SizedBox(height: 8),
-                      Text(
-                        participant.name,
-                        style: Theme.of(context).textTheme.titleMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Text('Error: $error'),
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text('Ошибка: ${snapshot.error}'),
+                    );
+                  }
+
+                  final files = snapshot.data ?? [];
+
+                  if (files.isEmpty) {
+                    return const Center(
+                      child: Text('Документов пока нет'),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: files.length,
+                    itemBuilder: (context, index) {
+                      return FileCard(
+                        file: files[index],
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

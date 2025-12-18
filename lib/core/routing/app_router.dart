@@ -69,7 +69,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/files',
             name: 'files',
-            builder: (context, state) => const FilesPage(),
+            builder: (context, state) => FilesPage(
+              participantId: state.extra as int?,
+            ),
           ),
           GoRoute(
             path: '/charts',

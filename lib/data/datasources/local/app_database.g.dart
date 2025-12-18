@@ -1296,6 +1296,507 @@ class MetricDataPointsCompanion extends UpdateCompanion<MetricDataPoint> {
   }
 }
 
+class $FilesTable extends Files with TableInfo<$FilesTable, DbFile> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _participantIdMeta =
+      const VerificationMeta('participantId');
+  @override
+  late final GeneratedColumn<int> participantId = GeneratedColumn<int>(
+      'participant_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES participants (id) ON DELETE CASCADE'));
+  static const VerificationMeta _fileIdMeta = const VerificationMeta('fileId');
+  @override
+  late final GeneratedColumn<String> fileId = GeneratedColumn<String>(
+      'file_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 200),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+      'type', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('GENERAL'));
+  static const VerificationMeta _filePathMeta =
+      const VerificationMeta('filePath');
+  @override
+  late final GeneratedColumn<String> filePath = GeneratedColumn<String>(
+      'file_path', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+      'source', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _fileSizeMeta =
+      const VerificationMeta('fileSize');
+  @override
+  late final GeneratedColumn<int> fileSize = GeneratedColumn<int>(
+      'file_size', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _fileDateMeta =
+      const VerificationMeta('fileDate');
+  @override
+  late final GeneratedColumn<DateTime> fileDate = GeneratedColumn<DateTime>(
+      'file_date', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        participantId,
+        fileId,
+        title,
+        type,
+        filePath,
+        source,
+        fileSize,
+        fileDate,
+        createdAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'files';
+  @override
+  VerificationContext validateIntegrity(Insertable<DbFile> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('participant_id')) {
+      context.handle(
+          _participantIdMeta,
+          participantId.isAcceptableOrUnknown(
+              data['participant_id']!, _participantIdMeta));
+    } else if (isInserting) {
+      context.missing(_participantIdMeta);
+    }
+    if (data.containsKey('file_id')) {
+      context.handle(_fileIdMeta,
+          fileId.isAcceptableOrUnknown(data['file_id']!, _fileIdMeta));
+    } else if (isInserting) {
+      context.missing(_fileIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+          _typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+    }
+    if (data.containsKey('file_path')) {
+      context.handle(_filePathMeta,
+          filePath.isAcceptableOrUnknown(data['file_path']!, _filePathMeta));
+    } else if (isInserting) {
+      context.missing(_filePathMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(_sourceMeta,
+          source.isAcceptableOrUnknown(data['source']!, _sourceMeta));
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('file_size')) {
+      context.handle(_fileSizeMeta,
+          fileSize.isAcceptableOrUnknown(data['file_size']!, _fileSizeMeta));
+    }
+    if (data.containsKey('file_date')) {
+      context.handle(_fileDateMeta,
+          fileDate.isAcceptableOrUnknown(data['file_date']!, _fileDateMeta));
+    } else if (isInserting) {
+      context.missing(_fileDateMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DbFile map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DbFile(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      participantId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}participant_id'])!,
+      fileId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}file_id'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      type: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}type'])!,
+      filePath: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}file_path'])!,
+      source: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}source'])!,
+      fileSize: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}file_size']),
+      fileDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}file_date'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $FilesTable createAlias(String alias) {
+    return $FilesTable(attachedDatabase, alias);
+  }
+}
+
+class DbFile extends DataClass implements Insertable<DbFile> {
+  final int id;
+  final int participantId;
+
+  /// uuid из FileMetadata.id
+  final String fileId;
+  final String title;
+  final String type;
+  final String filePath;
+  final String source;
+  final int? fileSize;
+  final DateTime fileDate;
+  final DateTime createdAt;
+  const DbFile(
+      {required this.id,
+      required this.participantId,
+      required this.fileId,
+      required this.title,
+      required this.type,
+      required this.filePath,
+      required this.source,
+      this.fileSize,
+      required this.fileDate,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['participant_id'] = Variable<int>(participantId);
+    map['file_id'] = Variable<String>(fileId);
+    map['title'] = Variable<String>(title);
+    map['type'] = Variable<String>(type);
+    map['file_path'] = Variable<String>(filePath);
+    map['source'] = Variable<String>(source);
+    if (!nullToAbsent || fileSize != null) {
+      map['file_size'] = Variable<int>(fileSize);
+    }
+    map['file_date'] = Variable<DateTime>(fileDate);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  FilesCompanion toCompanion(bool nullToAbsent) {
+    return FilesCompanion(
+      id: Value(id),
+      participantId: Value(participantId),
+      fileId: Value(fileId),
+      title: Value(title),
+      type: Value(type),
+      filePath: Value(filePath),
+      source: Value(source),
+      fileSize: fileSize == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fileSize),
+      fileDate: Value(fileDate),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory DbFile.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DbFile(
+      id: serializer.fromJson<int>(json['id']),
+      participantId: serializer.fromJson<int>(json['participantId']),
+      fileId: serializer.fromJson<String>(json['fileId']),
+      title: serializer.fromJson<String>(json['title']),
+      type: serializer.fromJson<String>(json['type']),
+      filePath: serializer.fromJson<String>(json['filePath']),
+      source: serializer.fromJson<String>(json['source']),
+      fileSize: serializer.fromJson<int?>(json['fileSize']),
+      fileDate: serializer.fromJson<DateTime>(json['fileDate']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'participantId': serializer.toJson<int>(participantId),
+      'fileId': serializer.toJson<String>(fileId),
+      'title': serializer.toJson<String>(title),
+      'type': serializer.toJson<String>(type),
+      'filePath': serializer.toJson<String>(filePath),
+      'source': serializer.toJson<String>(source),
+      'fileSize': serializer.toJson<int?>(fileSize),
+      'fileDate': serializer.toJson<DateTime>(fileDate),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  DbFile copyWith(
+          {int? id,
+          int? participantId,
+          String? fileId,
+          String? title,
+          String? type,
+          String? filePath,
+          String? source,
+          Value<int?> fileSize = const Value.absent(),
+          DateTime? fileDate,
+          DateTime? createdAt}) =>
+      DbFile(
+        id: id ?? this.id,
+        participantId: participantId ?? this.participantId,
+        fileId: fileId ?? this.fileId,
+        title: title ?? this.title,
+        type: type ?? this.type,
+        filePath: filePath ?? this.filePath,
+        source: source ?? this.source,
+        fileSize: fileSize.present ? fileSize.value : this.fileSize,
+        fileDate: fileDate ?? this.fileDate,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  DbFile copyWithCompanion(FilesCompanion data) {
+    return DbFile(
+      id: data.id.present ? data.id.value : this.id,
+      participantId: data.participantId.present
+          ? data.participantId.value
+          : this.participantId,
+      fileId: data.fileId.present ? data.fileId.value : this.fileId,
+      title: data.title.present ? data.title.value : this.title,
+      type: data.type.present ? data.type.value : this.type,
+      filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      source: data.source.present ? data.source.value : this.source,
+      fileSize: data.fileSize.present ? data.fileSize.value : this.fileSize,
+      fileDate: data.fileDate.present ? data.fileDate.value : this.fileDate,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DbFile(')
+          ..write('id: $id, ')
+          ..write('participantId: $participantId, ')
+          ..write('fileId: $fileId, ')
+          ..write('title: $title, ')
+          ..write('type: $type, ')
+          ..write('filePath: $filePath, ')
+          ..write('source: $source, ')
+          ..write('fileSize: $fileSize, ')
+          ..write('fileDate: $fileDate, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, participantId, fileId, title, type,
+      filePath, source, fileSize, fileDate, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DbFile &&
+          other.id == this.id &&
+          other.participantId == this.participantId &&
+          other.fileId == this.fileId &&
+          other.title == this.title &&
+          other.type == this.type &&
+          other.filePath == this.filePath &&
+          other.source == this.source &&
+          other.fileSize == this.fileSize &&
+          other.fileDate == this.fileDate &&
+          other.createdAt == this.createdAt);
+}
+
+class FilesCompanion extends UpdateCompanion<DbFile> {
+  final Value<int> id;
+  final Value<int> participantId;
+  final Value<String> fileId;
+  final Value<String> title;
+  final Value<String> type;
+  final Value<String> filePath;
+  final Value<String> source;
+  final Value<int?> fileSize;
+  final Value<DateTime> fileDate;
+  final Value<DateTime> createdAt;
+  const FilesCompanion({
+    this.id = const Value.absent(),
+    this.participantId = const Value.absent(),
+    this.fileId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.type = const Value.absent(),
+    this.filePath = const Value.absent(),
+    this.source = const Value.absent(),
+    this.fileSize = const Value.absent(),
+    this.fileDate = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  FilesCompanion.insert({
+    this.id = const Value.absent(),
+    required int participantId,
+    required String fileId,
+    required String title,
+    this.type = const Value.absent(),
+    required String filePath,
+    required String source,
+    this.fileSize = const Value.absent(),
+    required DateTime fileDate,
+    this.createdAt = const Value.absent(),
+  })  : participantId = Value(participantId),
+        fileId = Value(fileId),
+        title = Value(title),
+        filePath = Value(filePath),
+        source = Value(source),
+        fileDate = Value(fileDate);
+  static Insertable<DbFile> custom({
+    Expression<int>? id,
+    Expression<int>? participantId,
+    Expression<String>? fileId,
+    Expression<String>? title,
+    Expression<String>? type,
+    Expression<String>? filePath,
+    Expression<String>? source,
+    Expression<int>? fileSize,
+    Expression<DateTime>? fileDate,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (participantId != null) 'participant_id': participantId,
+      if (fileId != null) 'file_id': fileId,
+      if (title != null) 'title': title,
+      if (type != null) 'type': type,
+      if (filePath != null) 'file_path': filePath,
+      if (source != null) 'source': source,
+      if (fileSize != null) 'file_size': fileSize,
+      if (fileDate != null) 'file_date': fileDate,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  FilesCompanion copyWith(
+      {Value<int>? id,
+      Value<int>? participantId,
+      Value<String>? fileId,
+      Value<String>? title,
+      Value<String>? type,
+      Value<String>? filePath,
+      Value<String>? source,
+      Value<int?>? fileSize,
+      Value<DateTime>? fileDate,
+      Value<DateTime>? createdAt}) {
+    return FilesCompanion(
+      id: id ?? this.id,
+      participantId: participantId ?? this.participantId,
+      fileId: fileId ?? this.fileId,
+      title: title ?? this.title,
+      type: type ?? this.type,
+      filePath: filePath ?? this.filePath,
+      source: source ?? this.source,
+      fileSize: fileSize ?? this.fileSize,
+      fileDate: fileDate ?? this.fileDate,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (participantId.present) {
+      map['participant_id'] = Variable<int>(participantId.value);
+    }
+    if (fileId.present) {
+      map['file_id'] = Variable<String>(fileId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (filePath.present) {
+      map['file_path'] = Variable<String>(filePath.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (fileSize.present) {
+      map['file_size'] = Variable<int>(fileSize.value);
+    }
+    if (fileDate.present) {
+      map['file_date'] = Variable<DateTime>(fileDate.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FilesCompanion(')
+          ..write('id: $id, ')
+          ..write('participantId: $participantId, ')
+          ..write('fileId: $fileId, ')
+          ..write('title: $title, ')
+          ..write('type: $type, ')
+          ..write('filePath: $filePath, ')
+          ..write('source: $source, ')
+          ..write('fileSize: $fileSize, ')
+          ..write('fileDate: $fileDate, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1304,12 +1805,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MetricsTable metrics = $MetricsTable(this);
   late final $MetricDataPointsTable metricDataPoints =
       $MetricDataPointsTable(this);
+  late final $FilesTable files = $FilesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [participants, healthEvents, metrics, metricDataPoints];
+      [participants, healthEvents, metrics, metricDataPoints, files];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
         [
@@ -1332,6 +1834,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
                 limitUpdateKind: UpdateKind.delete),
             result: [
               TableUpdate('metric_data_points', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('participants',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('files', kind: UpdateKind.delete),
             ],
           ),
         ],
@@ -1383,6 +1892,21 @@ final class $$ParticipantsTableReferences
         .filter((f) => f.participantId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_metricsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$FilesTable, List<DbFile>> _filesRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.files,
+          aliasName:
+              $_aliasNameGenerator(db.participants.id, db.files.participantId));
+
+  $$FilesTableProcessedTableManager get filesRefs {
+    final manager = $$FilesTableTableManager($_db, $_db.files)
+        .filter((f) => f.participantId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_filesRefsTable($_db));
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
@@ -1443,6 +1967,27 @@ class $$ParticipantsTableFilterComposer
             $$MetricsTableFilterComposer(
               $db: $db,
               $table: $db.metrics,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> filesRefs(
+      Expression<bool> Function($$FilesTableFilterComposer f) f) {
+    final $$FilesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.files,
+        getReferencedColumn: (t) => t.participantId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$FilesTableFilterComposer(
+              $db: $db,
+              $table: $db.files,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -1536,6 +2081,27 @@ class $$ParticipantsTableAnnotationComposer
             ));
     return f(composer);
   }
+
+  Expression<T> filesRefs<T extends Object>(
+      Expression<T> Function($$FilesTableAnnotationComposer a) f) {
+    final $$FilesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.files,
+        getReferencedColumn: (t) => t.participantId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$FilesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.files,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$ParticipantsTableTableManager extends RootTableManager<
@@ -1549,7 +2115,8 @@ class $$ParticipantsTableTableManager extends RootTableManager<
     $$ParticipantsTableUpdateCompanionBuilder,
     (Participant, $$ParticipantsTableReferences),
     Participant,
-    PrefetchHooks Function({bool healthEventsRefs, bool metricsRefs})> {
+    PrefetchHooks Function(
+        {bool healthEventsRefs, bool metricsRefs, bool filesRefs})> {
   $$ParticipantsTableTableManager(_$AppDatabase db, $ParticipantsTable table)
       : super(TableManagerState(
           db: db,
@@ -1591,12 +2158,15 @@ class $$ParticipantsTableTableManager extends RootTableManager<
                   ))
               .toList(),
           prefetchHooksCallback: (
-              {healthEventsRefs = false, metricsRefs = false}) {
+              {healthEventsRefs = false,
+              metricsRefs = false,
+              filesRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
                 if (healthEventsRefs) db.healthEvents,
-                if (metricsRefs) db.metrics
+                if (metricsRefs) db.metrics,
+                if (filesRefs) db.files
               ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
@@ -1626,6 +2196,19 @@ class $$ParticipantsTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.participantId == item.id),
+                        typedResults: items),
+                  if (filesRefs)
+                    await $_getPrefetchedData<Participant, $ParticipantsTable,
+                            DbFile>(
+                        currentTable: table,
+                        referencedTable:
+                            $$ParticipantsTableReferences._filesRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$ParticipantsTableReferences(db, table, p0)
+                                .filesRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.participantId == item.id),
                         typedResults: items)
                 ];
               },
@@ -1645,7 +2228,8 @@ typedef $$ParticipantsTableProcessedTableManager = ProcessedTableManager<
     $$ParticipantsTableUpdateCompanionBuilder,
     (Participant, $$ParticipantsTableReferences),
     Participant,
-    PrefetchHooks Function({bool healthEventsRefs, bool metricsRefs})>;
+    PrefetchHooks Function(
+        {bool healthEventsRefs, bool metricsRefs, bool filesRefs})>;
 typedef $$HealthEventsTableCreateCompanionBuilder = HealthEventsCompanion
     Function({
   Value<int> id,
@@ -2573,6 +3157,345 @@ typedef $$MetricDataPointsTableProcessedTableManager = ProcessedTableManager<
     (MetricDataPoint, $$MetricDataPointsTableReferences),
     MetricDataPoint,
     PrefetchHooks Function({bool metricId})>;
+typedef $$FilesTableCreateCompanionBuilder = FilesCompanion Function({
+  Value<int> id,
+  required int participantId,
+  required String fileId,
+  required String title,
+  Value<String> type,
+  required String filePath,
+  required String source,
+  Value<int?> fileSize,
+  required DateTime fileDate,
+  Value<DateTime> createdAt,
+});
+typedef $$FilesTableUpdateCompanionBuilder = FilesCompanion Function({
+  Value<int> id,
+  Value<int> participantId,
+  Value<String> fileId,
+  Value<String> title,
+  Value<String> type,
+  Value<String> filePath,
+  Value<String> source,
+  Value<int?> fileSize,
+  Value<DateTime> fileDate,
+  Value<DateTime> createdAt,
+});
+
+final class $$FilesTableReferences
+    extends BaseReferences<_$AppDatabase, $FilesTable, DbFile> {
+  $$FilesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ParticipantsTable _participantIdTable(_$AppDatabase db) =>
+      db.participants.createAlias(
+          $_aliasNameGenerator(db.files.participantId, db.participants.id));
+
+  $$ParticipantsTableProcessedTableManager get participantId {
+    final $_column = $_itemColumn<int>('participant_id')!;
+
+    final manager = $$ParticipantsTableTableManager($_db, $_db.participants)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_participantIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$FilesTableFilterComposer extends Composer<_$AppDatabase, $FilesTable> {
+  $$FilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get fileId => $composableBuilder(
+      column: $table.fileId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get filePath => $composableBuilder(
+      column: $table.filePath, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get source => $composableBuilder(
+      column: $table.source, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get fileSize => $composableBuilder(
+      column: $table.fileSize, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get fileDate => $composableBuilder(
+      column: $table.fileDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  $$ParticipantsTableFilterComposer get participantId {
+    final $$ParticipantsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.participantId,
+        referencedTable: $db.participants,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ParticipantsTableFilterComposer(
+              $db: $db,
+              $table: $db.participants,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$FilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $FilesTable> {
+  $$FilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get fileId => $composableBuilder(
+      column: $table.fileId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get type => $composableBuilder(
+      column: $table.type, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get filePath => $composableBuilder(
+      column: $table.filePath, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get source => $composableBuilder(
+      column: $table.source, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get fileSize => $composableBuilder(
+      column: $table.fileSize, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get fileDate => $composableBuilder(
+      column: $table.fileDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  $$ParticipantsTableOrderingComposer get participantId {
+    final $$ParticipantsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.participantId,
+        referencedTable: $db.participants,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ParticipantsTableOrderingComposer(
+              $db: $db,
+              $table: $db.participants,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$FilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FilesTable> {
+  $$FilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get fileId =>
+      $composableBuilder(column: $table.fileId, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get filePath =>
+      $composableBuilder(column: $table.filePath, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<int> get fileSize =>
+      $composableBuilder(column: $table.fileSize, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get fileDate =>
+      $composableBuilder(column: $table.fileDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$ParticipantsTableAnnotationComposer get participantId {
+    final $$ParticipantsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.participantId,
+        referencedTable: $db.participants,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ParticipantsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.participants,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$FilesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $FilesTable,
+    DbFile,
+    $$FilesTableFilterComposer,
+    $$FilesTableOrderingComposer,
+    $$FilesTableAnnotationComposer,
+    $$FilesTableCreateCompanionBuilder,
+    $$FilesTableUpdateCompanionBuilder,
+    (DbFile, $$FilesTableReferences),
+    DbFile,
+    PrefetchHooks Function({bool participantId})> {
+  $$FilesTableTableManager(_$AppDatabase db, $FilesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FilesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<int> participantId = const Value.absent(),
+            Value<String> fileId = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String> type = const Value.absent(),
+            Value<String> filePath = const Value.absent(),
+            Value<String> source = const Value.absent(),
+            Value<int?> fileSize = const Value.absent(),
+            Value<DateTime> fileDate = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+          }) =>
+              FilesCompanion(
+            id: id,
+            participantId: participantId,
+            fileId: fileId,
+            title: title,
+            type: type,
+            filePath: filePath,
+            source: source,
+            fileSize: fileSize,
+            fileDate: fileDate,
+            createdAt: createdAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required int participantId,
+            required String fileId,
+            required String title,
+            Value<String> type = const Value.absent(),
+            required String filePath,
+            required String source,
+            Value<int?> fileSize = const Value.absent(),
+            required DateTime fileDate,
+            Value<DateTime> createdAt = const Value.absent(),
+          }) =>
+              FilesCompanion.insert(
+            id: id,
+            participantId: participantId,
+            fileId: fileId,
+            title: title,
+            type: type,
+            filePath: filePath,
+            source: source,
+            fileSize: fileSize,
+            fileDate: fileDate,
+            createdAt: createdAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) =>
+                  (e.readTable(table), $$FilesTableReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: ({participantId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (participantId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.participantId,
+                    referencedTable:
+                        $$FilesTableReferences._participantIdTable(db),
+                    referencedColumn:
+                        $$FilesTableReferences._participantIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$FilesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $FilesTable,
+    DbFile,
+    $$FilesTableFilterComposer,
+    $$FilesTableOrderingComposer,
+    $$FilesTableAnnotationComposer,
+    $$FilesTableCreateCompanionBuilder,
+    $$FilesTableUpdateCompanionBuilder,
+    (DbFile, $$FilesTableReferences),
+    DbFile,
+    PrefetchHooks Function({bool participantId})>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2585,4 +3508,6 @@ class $AppDatabaseManager {
       $$MetricsTableTableManager(_db, _db.metrics);
   $$MetricDataPointsTableTableManager get metricDataPoints =>
       $$MetricDataPointsTableTableManager(_db, _db.metricDataPoints);
+  $$FilesTableTableManager get files =>
+      $$FilesTableTableManager(_db, _db.files);
 }
