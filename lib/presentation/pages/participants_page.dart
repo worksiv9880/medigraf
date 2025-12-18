@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../core/di/providers.dart';
 import '../../data/datasources/local/app_database.dart';
+import 'package:go_router/go_router.dart';
 
 class ParticipantsPage extends ConsumerStatefulWidget {
   const ParticipantsPage({super.key});
@@ -12,7 +13,18 @@ class ParticipantsPage extends ConsumerStatefulWidget {
 }
 
 class _ParticipantsPageState extends ConsumerState<ParticipantsPage> {
-  final List<String> emojis = ['👤', '👨', '👩', '👶', '🐕', '🐈', '🐦', '🐰', '🐹', '🐢'];
+  final List<String> emojis = [
+    '👤',
+    '👨',
+    '👩',
+    '👶',
+    '🐕',
+    '🐈',
+    '🐦',
+    '🐰',
+    '🐹',
+    '🐢'
+  ];
 
   void _showAddDialog() {
     final nameController = TextEditingController();
@@ -46,10 +58,10 @@ class _ParticipantsPageState extends ConsumerState<ParticipantsPage> {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: isSelected 
-                          ? Theme.of(builderContext).colorScheme.primary 
-                          : Colors.transparent,
-                         width: 2,
+                          color: isSelected
+                              ? Theme.of(builderContext).colorScheme.primary
+                              : Colors.transparent,
+                          width: 2,
                         ),
                         borderRadius: BorderRadius.circular(8),
                         shape: BoxShape.rectangle,
@@ -69,23 +81,24 @@ class _ParticipantsPageState extends ConsumerState<ParticipantsPage> {
             ElevatedButton(
               onPressed: () async {
                 final name = nameController.text.trim();
-               if (name.isEmpty) {
-                 ScaffoldMessenger.maybeOf(dialogContext)
-                 ?.showSnackBar(const SnackBar(content: Text('Please enter a name')));
-                    return;
-               }
+                if (name.isEmpty) {
+                  ScaffoldMessenger.maybeOf(dialogContext)?.showSnackBar(
+                      const SnackBar(content: Text('Please enter a name')));
+                  return;
+                }
 
-               await ref.read(databaseProvider).addParticipant(
-                    ParticipantsCompanion(
+                await ref.read(databaseProvider).addParticipant(
+                      ParticipantsCompanion(
                         name: drift.Value(name),
-                       emoji: drift.Value(selectedEmoji),
-                  ),
-                );
+                        emoji: drift.Value(selectedEmoji),
+                      ),
+                    );
 
                 if (dialogContext.mounted) {
                   Navigator.pop(dialogContext);
                   ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    const SnackBar(content: Text('Participant added successfully')),
+                    const SnackBar(
+                        content: Text('Participant added successfully')),
                   );
                 }
               },
@@ -104,6 +117,12 @@ class _ParticipantsPageState extends ConsumerState<ParticipantsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Participants'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => context.push('/settings'),
+          ),
+        ],
       ),
       body: participantsAsync.when(
         data: (participants) {
@@ -122,8 +141,8 @@ class _ParticipantsPageState extends ConsumerState<ParticipantsPage> {
                   Text(
                     'Add your first participant',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                          color: Colors.grey[600],
+                        ),
                   ),
                 ],
               ),
@@ -135,28 +154,30 @@ class _ParticipantsPageState extends ConsumerState<ParticipantsPage> {
             itemBuilder: (context, index) {
               final participant = participants[index];
               return ListTile(
-                leading: Text(participant.emoji, style: const TextStyle(fontSize: 32)),
+                leading: Text(participant.emoji,
+                    style: const TextStyle(fontSize: 32)),
                 title: Text(participant.name),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete_outline),
                   onPressed: () async {
                     final confirm = await showDialog<bool>(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: const Text('Delete Participant'),
-      content: Text('Are you sure you want to delete ${participant.name}?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(context, true),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-          ),
-          child: const Text('Delete'),
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: const Text('Delete Participant'),
+                        content: Text(
+                            'Are you sure you want to delete ${participant.name}?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Delete'),
                           ),
                         ],
                       ),
@@ -164,16 +185,18 @@ class _ParticipantsPageState extends ConsumerState<ParticipantsPage> {
 
                     if (confirm != true) return;
 
-  await ref.read(databaseProvider).deleteParticipant(participant.id);
+                    await ref
+                        .read(databaseProvider)
+                        .deleteParticipant(participant.id);
 
-  if (!mounted) return;                                // ← эта строка должна быть сразу перед ScaffoldMessenger
+                    if (!mounted)
+                      return; // ← эта строка должна быть сразу перед ScaffoldMessenger
 
-  // ignore: use_build_context_synchronously
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Participant deleted')),
-  );
-},
-                  
+                    // ignore: use_build_context_synchronously
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Participant deleted')),
+                    );
+                  },
                 ),
               );
             },

@@ -7,14 +7,13 @@ import '../../presentation/pages/calendar_page.dart';
 import '../../presentation/pages/charts_page.dart';
 import '../../presentation/pages/settings_page.dart';
 
-
 final routerProvider = Provider<GoRouter>((ref) {
   // Список вкладок нижней навигации (порядок важен!)
   const tabs = [
     '/calendar',
     '/home',
-    '/participants',
     '/charts',
+    '/participants',
   ];
 
   return GoRouter(
@@ -22,7 +21,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       // Основной Shell с нижней навигацией
       ShellRoute(
-        builder: (context, state, child) {  // ← Здесь state, а не router!
+        builder: (context, state, child) {
+          // ← Здесь state, а не router!
           // Определяем текущий индекс вкладки по пути (state.uri.path)
           final location = state.uri.path;
           int currentIndex = tabs.indexWhere((tab) => location.startsWith(tab));
@@ -31,7 +31,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           return Scaffold(
             body: child, // сюда подставляется страница из вложенных GoRoute
             bottomNavigationBar: BottomNavigationBar(
-              type: BottomNavigationBarType.fixed, // обязательно при ≥4 вкладках
+              type:
+                  BottomNavigationBarType.fixed, // обязательно при ≥4 вкладках
               currentIndex: currentIndex,
               onTap: (index) {
                 // Используем GoRouter.of(context).go() для навигации
@@ -43,16 +44,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                   label: 'Календарь',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.home),
-                  label: 'Главная',
+                  icon: Icon(Icons.folder),
+                  label: 'Документы',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.group),
-                  label: 'Участники',
+                  label: 'Графики',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.bar_chart),
-                  label: 'Графики',
+                  label: 'Участники',
                 ),
               ],
             ),
@@ -71,14 +72,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const HomePage(),
           ),
           GoRoute(
-            path: '/participants',
-            name: 'participants',
-            builder: (context, state) => const ParticipantsPage(),
-          ),
-          GoRoute(
             path: '/charts',
             name: 'charts',
             builder: (context, state) => const ChartsPage(),
+          ),
+          GoRoute(
+            path: '/participants',
+            name: 'participants',
+            builder: (context, state) => const ParticipantsPage(),
           ),
         ],
       ),
