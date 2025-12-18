@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../presentation/pages/home_page.dart';
+import '../../presentation/pages/files_page.dart';
 import '../../presentation/pages/participants_page.dart';
 import '../../presentation/pages/calendar_page.dart';
 import '../../presentation/pages/charts_page.dart';
@@ -11,7 +11,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   // Список вкладок нижней навигации (порядок важен!)
   const tabs = [
     '/calendar',
-    '/home',
+    '/files',
     '/charts',
     '/participants',
   ];
@@ -67,9 +67,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const CalendarPage(),
           ),
           GoRoute(
-            path: '/home',
-            name: 'home',
-            builder: (context, state) => const HomePage(),
+            path: '/files',
+            name: 'files',
+            builder: (context, state) => const FilesPage(),
           ),
           GoRoute(
             path: '/charts',

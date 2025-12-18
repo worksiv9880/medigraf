@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/di/providers.dart';
 
-class HomePage extends ConsumerWidget {
-  const HomePage({super.key});
+class FilesPage extends ConsumerWidget {
+  const FilesPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -13,12 +13,6 @@ class HomePage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('MediGraf'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => context.push('/settings'),
-          ),
-        ],
       ),
       body: participantsAsync.when(
         data: (participants) {
@@ -37,8 +31,8 @@ class HomePage extends ConsumerWidget {
                   Text(
                     'Add your first participant to get started',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                          color: Colors.grey[600],
+                        ),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
@@ -68,7 +62,8 @@ class HomePage extends ConsumerWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add_circle_outline, size: 48, color: Theme.of(context).primaryColor),
+                        Icon(Icons.add_circle_outline,
+                            size: 48, color: Theme.of(context).primaryColor),
                         const SizedBox(height: 8),
                         const Text('Add Participant'),
                       ],
@@ -81,13 +76,15 @@ class HomePage extends ConsumerWidget {
               return Card(
                 child: InkWell(
                   onTap: () {
-                    ref.read(selectedParticipantProvider.notifier).state = participant;
+                    ref.read(selectedParticipantProvider.notifier).state =
+                        participant;
                     context.push('/calendar');
                   },
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(participant.emoji, style: const TextStyle(fontSize: 48)),
+                      Text(participant.emoji,
+                          style: const TextStyle(fontSize: 48)),
                       const SizedBox(height: 8),
                       Text(
                         participant.name,
