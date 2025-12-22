@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../data/datasources/local/app_database.dart';
-import '../../services/db_file_service.dart';
-import '../../services/file_service.dart';
+import '../../../data/datasources/local/app_database.dart';
+import '../../../services/db_file_service.dart';
+import '../../../services/file_service.dart';
 import 'file_card.dart';
 import 'files_header.dart';
 
