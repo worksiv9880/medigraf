@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:intl/intl.dart';
-import '../../core/di/providers.dart';
-import '../../data/datasources/local/app_database.dart';
+import '../../../core/di/providers.dart';
+import '../../../data/datasources/local/app_database.dart';
 
 class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({super.key});
