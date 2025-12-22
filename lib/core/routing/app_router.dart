@@ -5,7 +5,7 @@ import '../../presentation/pages/files/files_page.dart';
 import '../../presentation/pages/participants/participants_page.dart';
 import '../../presentation/pages/calendar/calendar_page.dart';
 import '../../presentation/pages/charts/charts_page.dart';
-import '../../presentation/pages/settings_page.dart';
+import '../../presentation/pages/settings/settings_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   // Список вкладок нижней навигации (порядок важен!)
