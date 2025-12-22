@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
-import '../../core/di/providers.dart';
-import '../../data/datasources/local/app_database.dart';
+import '../../../core/di/providers.dart';
+import '../../../data/datasources/local/app_database.dart';
 import 'package:go_router/go_router.dart';
 
 class ParticipantsPage extends ConsumerStatefulWidget {
