@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:intl/intl.dart';
-import '../../core/di/providers.dart';
-import '../../data/datasources/local/app_database.dart';
-import '../../core/theme/app_theme.dart';
+import '../../../core/di/providers.dart';
+import '../../../data/datasources/local/app_database.dart';
+import '../../../core/theme/app_theme.dart';
 
 class ChartsPage extends ConsumerStatefulWidget {
   const ChartsPage({super.key});
