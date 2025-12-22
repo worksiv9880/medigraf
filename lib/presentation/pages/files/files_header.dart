@@ -11,13 +11,6 @@ class FilesHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          const Text(
-            'Files',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
           const Spacer(),
           ElevatedButton.icon(
             onPressed: onUpload,

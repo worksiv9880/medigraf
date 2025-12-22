@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/di/providers.dart';
 import '../../../data/datasources/local/app_database.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../widgets/app_header/app_header.dart';
 
 class ChartsPage extends ConsumerStatefulWidget {
   const ChartsPage({super.key});
@@ -61,7 +62,8 @@ class _ChartsPageState extends ConsumerState<ChartsPage> {
           ),
           FilledButton(
             onPressed: () async {
-              if (nameController.text.trim().isEmpty || unitController.text.trim().isEmpty) {
+              if (nameController.text.trim().isEmpty ||
+                  unitController.text.trim().isEmpty) {
                 return;
               }
 
@@ -162,9 +164,7 @@ class _ChartsPageState extends ConsumerState<ChartsPage> {
     if (selectedParticipant == null) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: const Text('Graph Building'),
-        ),
+        appBar: const AppHeader(),
         body: const Center(
           child: Text('Please select a participant from the calendar'),
         ),
@@ -225,13 +225,14 @@ class _ChartsPageState extends ConsumerState<ChartsPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   itemCount: _selectedDays,
                   itemBuilder: (context, index) {
-                    final day = DateTime.now().subtract(Duration(days: _selectedDays - 1 - index));
+                    final day = DateTime.now()
+                        .subtract(Duration(days: _selectedDays - 1 - index));
                     final isToday = DateUtils.isSameDay(day, DateTime.now());
                     return _buildDayChip(day, isToday);
                   },
                 ),
               ),
-              
+
               // Chart
               Expanded(
                 child: _selectedMetric != null
@@ -241,7 +242,7 @@ class _ChartsPageState extends ConsumerState<ChartsPage> {
                       )
                     : const SizedBox(),
               ),
-              
+
               // Legend
               Container(
                 color: Theme.of(context).cardColor,
@@ -305,7 +306,8 @@ class _ChartsPageState extends ConsumerState<ChartsPage> {
             ),
           ),
           Text(
-            DateFormat('dd').format(day) == DateFormat('dd').format(DateTime.now())
+            DateFormat('dd').format(day) ==
+                    DateFormat('dd').format(DateTime.now())
                 ? '9 dim'
                 : '${DateFormat('d').format(day)} dim',
             style: TextStyle(
@@ -318,7 +320,8 @@ class _ChartsPageState extends ConsumerState<ChartsPage> {
     );
   }
 
-  Widget _buildLegendItem(String name, Color color, bool isSelected, VoidCallback onTap) {
+  Widget _buildLegendItem(
+      String name, Color color, bool isSelected, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Row(
@@ -373,9 +376,8 @@ class _MetricChart extends ConsumerWidget {
 
         // Filter data points for selected time range
         final cutoffDate = DateTime.now().subtract(Duration(days: days));
-        final filteredPoints = dataPoints
-            .where((p) => p.recordedAt.isAfter(cutoffDate))
-            .toList();
+        final filteredPoints =
+            dataPoints.where((p) => p.recordedAt.isAfter(cutoffDate)).toList();
 
         if (filteredPoints.isEmpty) {
           return const Center(child: Text('No data in selected range'));
@@ -409,14 +411,18 @@ class _MetricChart extends ConsumerWidget {
                     getTitlesWidget: (value, meta) {
                       return Text(
                         value.toInt().toString(),
-                        style: const TextStyle(fontSize: 10, color: Colors.grey),
+                        style:
+                            const TextStyle(fontSize: 10, color: Colors.grey),
                       );
                     },
                   ),
                 ),
-                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                bottomTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
               borderData: FlBorderData(show: false),
               lineBarsData: [
@@ -449,7 +455,8 @@ class _MetricChart extends ConsumerWidget {
                 ),
               ],
               minY: 0,
-              maxY: (spots.map((s) => s.y).reduce((a, b) => a > b ? a : b) * 1.2),
+              maxY:
+                  (spots.map((s) => s.y).reduce((a, b) => a > b ? a : b) * 1.2),
             ),
           ),
         );

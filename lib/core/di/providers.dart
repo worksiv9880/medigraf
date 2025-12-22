@@ -21,24 +21,33 @@ final participantsProvider = StreamProvider<List<Participant>>((ref) {
 final selectedParticipantProvider = StateProvider<Participant?>((ref) => null);
 
 // Health Events Provider - Riverpod 3.x family syntax
-final healthEventsProvider = StreamProvider.autoDispose.family<List<HealthEvent>, int>((ref, participantId) {
+final healthEventsProvider = StreamProvider.autoDispose
+    .family<List<HealthEvent>, int>((ref, participantId) {
   final db = ref.watch(databaseProvider);
   return (db.select(db.healthEvents)
-    ..where((t) => t.participantId.equals(participantId))
-    ..orderBy([(t) => OrderingTerm.desc(t.eventDate)])).watch();
+        ..where((t) => t.participantId.equals(participantId))
+        ..orderBy([(t) => OrderingTerm.desc(t.eventDate)]))
+      .watch();
 });
 
 // Metrics Provider - Riverpod 3.x family syntax
-final metricsProvider = StreamProvider.autoDispose.family<List<Metric>, int>((ref, participantId) {
+final metricsProvider =
+    StreamProvider.autoDispose.family<List<Metric>, int>((ref, participantId) {
   final db = ref.watch(databaseProvider);
   return (db.select(db.metrics)
-    ..where((t) => t.participantId.equals(participantId))).watch();
+        ..where((t) => t.participantId.equals(participantId)))
+      .watch();
 });
 
 // Metric Data Points Provider - Riverpod 3.x family syntax
-final metricDataPointsProvider = StreamProvider.autoDispose.family<List<MetricDataPoint>, int>((ref, metricId) {
+final metricDataPointsProvider = StreamProvider.autoDispose
+    .family<List<MetricDataPoint>, int>((ref, metricId) {
   final db = ref.watch(databaseProvider);
   return (db.select(db.metricDataPoints)
-    ..where((t) => t.metricId.equals(metricId))
-    ..orderBy([(t) => OrderingTerm.asc(t.recordedAt)])).watch();
+        ..where((t) => t.metricId.equals(metricId))
+        ..orderBy([(t) => OrderingTerm.asc(t.recordedAt)]))
+      .watch();
 });
+
+//Theme Provider
+final themeProvider = StateProvider<bool>((ref) => false);

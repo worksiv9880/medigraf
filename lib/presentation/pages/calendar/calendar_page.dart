@@ -5,6 +5,8 @@ import 'package:drift/drift.dart' as drift;
 import 'package:intl/intl.dart';
 import '../../../core/di/providers.dart';
 import '../../../data/datasources/local/app_database.dart';
+import '../../widgets/app_header/app_header.dart';
+import '../../widgets/app_header/participant_filter.dart';
 
 class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({super.key});
@@ -126,6 +128,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
   @override
   Widget build(BuildContext context) {
+    final participantsAsync = ref.watch(participantsProvider);
     final selectedParticipant = ref.watch(selectedParticipantProvider);
     final eventsAsync = selectedParticipant != null
         ? ref.watch(healthEventsProvider(selectedParticipant.id))
@@ -133,35 +136,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('MediRecord'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.visibility_outlined),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.dark_mode_outlined),
-            onPressed: () {},
-          ),
-        ],
-      ),
+      appBar: const AppHeader(),
       body: Column(
         children: [
-          // Participant Selector
-          Container(
-            color: Theme.of(context).cardColor,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                _buildParticipantButton(Icons.person, true),
-                const SizedBox(width: 8),
-                _buildParticipantButton(Icons.people, false),
-                const SizedBox(width: 8),
-                _buildParticipantButton(Icons.pets, false),
-              ],
-            ),
-          ),
+          ParticipantFilter(),
 
           // Calendar
           Container(
