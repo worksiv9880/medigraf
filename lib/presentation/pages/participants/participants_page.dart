@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' as drift;
 import '../../../core/di/providers.dart';
 import '../../../data/datasources/local/app_database.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/app_header/app_header.dart';
 
 class ParticipantsPage extends ConsumerStatefulWidget {
   const ParticipantsPage({super.key});
@@ -115,15 +116,15 @@ class _ParticipantsPageState extends ConsumerState<ParticipantsPage> {
     final participantsAsync = ref.watch(participantsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Participants'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => context.push('/settings'),
-          ),
-        ],
-      ),
+appBar: AppHeader(
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.settings),
+      onPressed: () => context.push('/settings'),
+    ),
+  ],
+),
+
       body: participantsAsync.when(
         data: (participants) {
           if (participants.isEmpty) {
