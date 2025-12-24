@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/di/providers.dart';
 import '../../../data/datasources/local/app_database.dart';
+import 'participant_button.dart';
 
 class ParticipantFilter extends ConsumerWidget {
   const ParticipantFilter({super.key});
@@ -18,34 +19,25 @@ class ParticipantFilter extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: participants.map((participant) {
-              final isSelected = selectedParticipant?.id == participant.id;
+              final isSelected =
+                  selectedParticipant?.id == participant.id;
 
-              return GestureDetector(
+              return ParticipantButton(
+                participant: participant,
+                isSelected: isSelected,
                 onTap: () {
-                  ref.read(selectedParticipantProvider.notifier).state =
-                      participant;
+                  ref
+                      .read(selectedParticipantProvider.notifier)
+                      .state = participant;
                 },
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    participant.emoji, // используем emoji вместо iconData
-                    style: const TextStyle(fontSize: 24),
-                  ),
-                ),
               );
             }).toList(),
           ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, st) => Center(child: Text('Error: $e')),
+      loading: () =>
+          const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error: $e')),
     );
   }
 }
