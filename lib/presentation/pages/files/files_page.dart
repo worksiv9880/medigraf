@@ -6,7 +6,7 @@ import '../../../services/file_service.dart';
 import 'file_card.dart';
 import 'files_header.dart';
 import '../../widgets/app_header/app_header.dart';
-import '../../widgets/app_header/participant_filter.dart';
+import '../../widgets/participant_filter/participant_filter.dart';
 import '../../../core/di/providers.dart';
 
 class FilesPage extends ConsumerStatefulWidget {

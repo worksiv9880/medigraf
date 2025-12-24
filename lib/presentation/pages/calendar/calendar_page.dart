@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/di/providers.dart';
 import '../../../data/datasources/local/app_database.dart';
 import '../../widgets/app_header/app_header.dart';
-import '../../widgets/app_header/participant_filter.dart';
+import '../../widgets/participant_filter/participant_filter.dart';
 
 class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({super.key});
