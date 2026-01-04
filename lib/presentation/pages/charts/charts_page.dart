@@ -27,9 +27,9 @@ class _ChartsPageState extends ConsumerState<ChartsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final participant = ref.watch(selectedParticipantProvider);
+    final selectedParticipants = ref.watch(selectedParticipantsProvider);
 
-    if (participant == null) {
+    if (selectedParticipants.isEmpty) {
       return Scaffold(
         appBar: const AppHeader(),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -52,7 +52,7 @@ class _ChartsPageState extends ConsumerState<ChartsPage> {
       );
     }
 
-    final metricsAsync = ref.watch(metricsProvider(participant.id));
+    final metricsAsync = ref.watch(metricsProvider(selectedParticipants.first));
 
     return Scaffold(
       appBar: const AppHeader(),

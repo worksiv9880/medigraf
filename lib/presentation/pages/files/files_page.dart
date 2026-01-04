@@ -36,9 +36,9 @@ class _FilesPageState extends ConsumerState<FilesPage> {
   }
 
   Future<void> _uploadFromGallery() async {
-    final selectedParticipant = ref.read(selectedParticipantProvider);
+    final selectedParticipants = ref.read(selectedParticipantsProvider);
 
-    if (selectedParticipant == null) {
+    if (selectedParticipants.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Выберите участника для загрузки')),
       );
@@ -46,7 +46,7 @@ class _FilesPageState extends ConsumerState<FilesPage> {
     }
 
     await _dbFileService.addFromGallery(
-      participantId: selectedParticipant.id,
+      participantId: selectedParticipants.first,
       title: 'New File',
       type: 'GENERAL',
     );

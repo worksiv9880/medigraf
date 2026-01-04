@@ -35,8 +35,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   }
 
   void _showAddEventDialog() {
-    final selectedParticipant = ref.read(selectedParticipantProvider);
-    if (selectedParticipant == null) {
+    final selectedParticipants = ref.read(selectedParticipantsProvider);
+    if (selectedParticipants.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a participant first')),
       );
@@ -104,7 +104,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 final db = ref.read(databaseProvider);
                 await db.addHealthEvent(
                   HealthEventsCompanion(
-                    participantId: drift.Value(selectedParticipant.id),
+                    participantId: drift.Value(selectedParticipants.first),
                     title: drift.Value(titleController.text.trim()),
                     description: drift.Value(descController.text.trim().isEmpty
                         ? null
@@ -129,9 +129,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   @override
   Widget build(BuildContext context) {
     final participantsAsync = ref.watch(participantsProvider);
-    final selectedParticipant = ref.watch(selectedParticipantProvider);
-    final eventsAsync = selectedParticipant != null
-        ? ref.watch(healthEventsProvider(selectedParticipant.id))
+    final selectedParticipants = ref.watch(selectedParticipantsProvider);
+    final eventsAsync = selectedParticipants.isNotEmpty
+        ? ref.watch(healthEventsProvider(selectedParticipants.first))
         : const AsyncValue.data(<HealthEvent>[]);
 
     return Scaffold(

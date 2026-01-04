@@ -34,13 +34,13 @@ void showAddMetricDialog(BuildContext context, WidgetRef ref) {
         ),
         FilledButton(
           onPressed: () async {
-            final participant = ref.read(selectedParticipantProvider);
-            if (participant == null) return;
+            final selectedParticipants = ref.read(selectedParticipantsProvider);
+            if (selectedParticipants.isEmpty) return;
 
             final db = ref.read(databaseProvider);
             await db.addMetric(
               MetricsCompanion(
-                participantId: drift.Value(participant.id),
+                participantId: drift.Value(selectedParticipants.first),
                 name: drift.Value(nameController.text.trim()),
                 unit: drift.Value(unitController.text.trim()),
               ),

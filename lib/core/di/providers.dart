@@ -17,8 +17,8 @@ final participantsProvider = StreamProvider<List<Participant>>((ref) {
   return db.select(db.participants).watch();
 });
 
-// Selected Participant Provider
-final selectedParticipantProvider = StateProvider<Participant?>((ref) => null);
+// Selected Participants Provider
+final selectedParticipantsProvider = StateProvider<Set<int>>((ref) => <int>{});
 
 // Health Events Provider - Riverpod 3.x family syntax
 final healthEventsProvider = StreamProvider.autoDispose
