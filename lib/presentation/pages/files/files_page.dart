@@ -5,9 +5,9 @@ import '../../../services/db_file_service.dart';
 import '../../../services/file_service.dart';
 import 'file_card.dart';
 import 'files_header.dart';
+import 'upload_file_dialog.dart';
 import '../../widgets/app_header/app_header.dart';
 import '../../widgets/participant_filter/participant_filter.dart';
-import '../../../core/di/providers.dart';
 
 class FilesPage extends ConsumerStatefulWidget {
   const FilesPage({super.key});
@@ -35,21 +35,13 @@ class _FilesPageState extends ConsumerState<FilesPage> {
     _filesFuture = _db.getFiles();
   }
 
-  Future<void> _uploadFromGallery() async {
-    final selectedParticipants = ref.read(selectedParticipantsProvider);
-
-    if (selectedParticipants.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Выберите участника для загрузки')),
-      );
-      return;
-    }
-
-    await _dbFileService.addFromGallery(
-      participantId: selectedParticipants.first,
-      title: 'New File',
-      type: 'GENERAL',
+  Future<void> _openUploadDialog() async {
+    final uploaded = await showDialog<bool>(
+      context: context,
+      builder: (_) => UploadFileDialog(dbFileService: _dbFileService),
     );
+
+    if (!mounted || uploaded != true) return;
 
     setState(_loadFiles);
   }
@@ -65,7 +57,7 @@ class _FilesPageState extends ConsumerState<FilesPage> {
           children: [
             const ParticipantFilter(),
             const SizedBox(height: 16),
-            FilesHeader(onUpload: _uploadFromGallery),
+            FilesHeader(onUpload: _openUploadDialog),
             const SizedBox(height: 12),
             Expanded(
               child: FutureBuilder<List<DbFile>>(
