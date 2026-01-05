@@ -8,6 +8,7 @@ import 'files_header.dart';
 import 'upload_file_dialog.dart';
 import '../../widgets/app_header/app_header.dart';
 import '../../widgets/participant_filter/participant_filter.dart';
+import '../../../core/di/providers.dart';
 
 class FilesPage extends ConsumerStatefulWidget {
   const FilesPage({super.key});
@@ -48,6 +49,8 @@ class _FilesPageState extends ConsumerState<FilesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedParticipants = ref.watch(selectedParticipantsProvider);
+
     return Scaffold(
       appBar: const AppHeader(),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -68,25 +71,33 @@ class _FilesPageState extends ConsumerState<FilesPage> {
                   }
 
                   if (snapshot.hasError) {
-                    return Center(
-                      child: Text('Ошибка: ${snapshot.error}'),
-                    );
+                    return Center(child: Text('Ошибка: ${snapshot.error}'));
                   }
 
                   final files = snapshot.data ?? [];
 
-                  if (files.isEmpty) {
+                  if (selectedParticipants.isEmpty) {
                     return const Center(
-                      child: Text('Документов пока нет'),
+                      child: Text('Выберите участников, чтобы увидеть файлы'),
+                    );
+                  }
+
+                  final filteredFiles = files
+                      .where((file) =>
+                          selectedParticipants.contains(file.participantId))
+                      .toList();
+
+                  if (filteredFiles.isEmpty) {
+                    return const Center(
+                      child: Text('Нет файлов для выбранных участников'),
                     );
                   }
 
                   return ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: files.length,
-                    itemBuilder: (context, index) {
-                      return FileCard(file: files[index]);
-                    },
+                    itemCount: filteredFiles.length,
+                    itemBuilder: (context, index) =>
+                        FileCard(file: filteredFiles[index]),
                   );
                 },
               ),
