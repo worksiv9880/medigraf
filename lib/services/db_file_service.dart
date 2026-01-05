@@ -1,6 +1,6 @@
+import 'package:drift/drift.dart';
 import '../../data/datasources/local/app_database.dart';
 import 'file_service.dart';
-import 'package:drift/drift.dart';
 
 class DbFileService {
   final AppDatabase db;
@@ -17,7 +17,7 @@ class DbFileService {
     final file = await fileService.pickFromCamera();
     if (file == null) return;
 
-    await _saveToDb(
+    await addFileWithMetadata(
       participantId: participantId,
       title: title,
       type: type,
@@ -35,7 +35,7 @@ class DbFileService {
     final file = await fileService.pickFromGallery();
     if (file == null || participantId == null) return;
 
-    await _saveToDb(
+    await addFileWithMetadata(
       participantId: participantId,
       title: title,
       type: type,
@@ -53,7 +53,7 @@ class DbFileService {
     final files = await fileService.scanDocument();
 
     for (final file in files) {
-      await _saveToDb(
+      await addFileWithMetadata(
         participantId: participantId,
         title: title,
         type: type,
@@ -61,6 +61,22 @@ class DbFileService {
         fileDate: fileDate,
       );
     }
+  }
+
+  Future<void> addFileWithMetadata({
+    required int participantId,
+    required String title,
+    required String type,
+    required FileMetadata file,
+    DateTime? fileDate,
+  }) async {
+    await _saveToDb(
+      participantId: participantId,
+      title: title,
+      type: type,
+      file: file,
+      fileDate: fileDate,
+    );
   }
 
   Future<void> _saveToDb({
