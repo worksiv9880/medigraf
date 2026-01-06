@@ -11,8 +11,7 @@ import 'widgets/day_selector.dart';
 import 'widgets/metric_legend.dart';
 import 'widgets/empty_metrics_view.dart';
 import 'widgets/metric_chart.dart';
-import 'dialogs/add_metric_dialog.dart';
-import 'dialogs/add_data_point_dialog.dart';
+import 'widgets/chart_entry_dialog.dart';
 import '../../widgets/participant_filter/participant_filter.dart';
 
 class ChartsPage extends ConsumerStatefulWidget {
@@ -70,7 +69,11 @@ class _ChartsPageState extends ConsumerState<ChartsPage> {
               data: (metrics) {
                 if (metrics.isEmpty) {
                   return EmptyMetricsView(
-                    onAddMetric: () => showAddMetricDialog(context, ref),
+                    onAddParameter: () => showChartEntryDialog(
+                      context,
+                      ref,
+                      initialParticipantId: selectedParticipants.first,
+                    ),
                   );
                 }
 
@@ -101,27 +104,15 @@ class _ChartsPageState extends ConsumerState<ChartsPage> {
           ),
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton.small(
-            heroTag: 'add_metric',
-            onPressed: () => showAddMetricDialog(context, ref),
-            child: const Icon(Icons.add_chart),
-          ),
-          const SizedBox(height: 8),
-          FloatingActionButton(
-            heroTag: 'add_data',
-            onPressed: _state.selectedMetric == null
-                ? null
-                : () => showAddDataPointDialog(
-                      context,
-                      ref,
-                      _state.selectedMetric!,
-                    ),
-            child: const Icon(Icons.add),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'add_parameter',
+        onPressed: () => showChartEntryDialog(
+          context,
+          ref,
+          initialParticipantId: selectedParticipants.first,
+          initialMetric: _state.selectedMetric,
+        ),
+        child: const Icon(Icons.add),
       ),
     );
   }

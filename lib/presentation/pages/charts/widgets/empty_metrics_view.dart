@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class EmptyMetricsView extends StatelessWidget {
-  final VoidCallback onAddMetric;
+  final VoidCallback onAddParameter;
 
-  const EmptyMetricsView({super.key, required this.onAddMetric});
+  const EmptyMetricsView({super.key, required this.onAddParameter});
 
   @override
   Widget build(BuildContext context) {
@@ -16,9 +16,9 @@ class EmptyMetricsView extends StatelessWidget {
           const Text('No metrics yet'),
           const SizedBox(height: 8),
           FilledButton.icon(
-            onPressed: onAddMetric,
+            onPressed: onAddParameter,
             icon: const Icon(Icons.add),
-            label: const Text('Add Metric'),
+            label: const Text('Add Parameter'),
           ),
         ],
       ),
