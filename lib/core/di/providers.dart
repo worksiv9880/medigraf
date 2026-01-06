@@ -49,5 +49,14 @@ final metricDataPointsProvider = StreamProvider.autoDispose
       .watch();
 });
 
+final filesProvider =
+    StreamProvider.autoDispose.family<List<DbFile>, int>((ref, participantId) {
+  final db = ref.watch(databaseProvider);
+  return (db.select(db.files)
+        ..where((t) => t.participantId.equals(participantId))
+        ..orderBy([(t) => OrderingTerm.desc(t.fileDate)]))
+      .watch();
+});
+
 //Theme Provider
 final themeProvider = StateProvider<bool>((ref) => false);

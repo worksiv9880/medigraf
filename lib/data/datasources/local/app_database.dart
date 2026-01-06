@@ -61,6 +61,9 @@ class Files extends Table {
   TextColumn get source => text()(); // camera / gallery / scanner
   IntColumn get fileSize => integer().nullable()();
   DateTimeColumn get fileDate => dateTime()();
+  TextColumn get mimeType => text().nullable()();
+  TextColumn get previewPath => text().nullable()();
+  IntColumn get pageCount => integer().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -70,7 +73,19 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.addColumn(files, files.mimeType);
+            await m.addColumn(files, files.previewPath);
+            await m.addColumn(files, files.pageCount);
+          }
+        },
+      );
 
   // Participant queries
   Future<List<Participant>> getAllParticipants() => select(participants).get();

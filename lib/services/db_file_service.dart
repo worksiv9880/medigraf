@@ -96,6 +96,9 @@ class DbFileService {
         source: file.source.name,
         fileSize: Value(file.fileSize),
         fileDate: fileDate ?? file.createdAt,
+        mimeType: Value(file.mimeType),
+        previewPath: Value(file.previewPath),
+        pageCount: Value(file.pageCount),
       ),
     );
   }

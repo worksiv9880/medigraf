@@ -26,6 +26,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     'exercise': const Color(0xFF66BB6A),
     'diet': const Color(0xFFFFA726),
     'general': Colors.grey,
+    'file': const Color(0xFF607D8B),
   };
 
   @override
@@ -126,6 +127,33 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     );
   }
 
+  List<_CalendarItem> _buildCalendarItems(
+    List<HealthEvent> events,
+    List<DbFile> files,
+  ) {
+    final eventItems = events
+        .map((event) => _CalendarItem(
+              date: event.eventDate,
+              title: event.title,
+              description: event.description,
+              category: event.category,
+              type: _CalendarItemType.event,
+            ))
+        .toList();
+
+    final fileItems = files
+        .map((file) => _CalendarItem(
+              date: file.fileDate,
+              title: file.title,
+              description: file.type,
+              category: 'file',
+              type: _CalendarItemType.file,
+            ))
+        .toList();
+
+    return [...eventItems, ...fileItems];
+  }
+
   @override
   Widget build(BuildContext context) {
     final participantsAsync = ref.watch(participantsProvider);
@@ -133,6 +161,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final eventsAsync = selectedParticipants.isNotEmpty
         ? ref.watch(healthEventsProvider(selectedParticipants.first))
         : const AsyncValue.data(<HealthEvent>[]);
+    final filesAsync = selectedParticipants.isNotEmpty
+        ? ref.watch(filesProvider(selectedParticipants.first))
+        : const AsyncValue.data(<DbFile>[]);
+
+    final combinedItems = _buildCalendarItems(
+      eventsAsync.value ?? const [],
+      filesAsync.value ?? const [],
+    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -199,10 +235,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 cellMargin: const EdgeInsets.all(4),
               ),
               eventLoader: (day) {
-                return eventsAsync.value
-                        ?.where((e) => isSameDay(e.eventDate, day))
-                        .toList() ??
-                    [];
+                return combinedItems
+                    .where((entry) => isSameDay(entry.date, day))
+                    .toList();
               },
               calendarBuilders: CalendarBuilders(
                 selectedBuilder: (context, day, focusedDay) {
@@ -226,14 +261,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 },
                 markerBuilder: (context, day, events) {
                   if (events.isEmpty) return null;
-                  final healthEvents = events.cast<HealthEvent>();
+                  final calendarEntries = events.cast<_CalendarItem>();
                   return Positioned(
                     bottom: 2,
                     child: Container(
                       height: 4,
                       width: 40,
                       decoration: BoxDecoration(
-                        color: categoryColors[healthEvents.first.category] ??
+                        color: categoryColors[calendarEntries.first.category] ??
                             Colors.grey,
                         borderRadius: BorderRadius.circular(2),
                       ),
@@ -248,11 +283,20 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           Expanded(
             child: eventsAsync.when(
               data: (events) {
-                final selectedEvents = events.where((e) {
-                  return isSameDay(e.eventDate, _selectedDay ?? _focusedDay);
-                }).toList();
+                if (eventsAsync.isLoading || filesAsync.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                if (selectedEvents.isEmpty) {
+                if (filesAsync.hasError) {
+                  return Center(child: Text('Error: ${filesAsync.error}'));
+                }
+
+                final selectedEntries = combinedItems.where((item) {
+                  return isSameDay(item.date, _selectedDay ?? _focusedDay);
+                }).toList()
+                  ..sort((a, b) => a.type.index.compareTo(b.type.index));
+
+                if (selectedEntries.isEmpty) {
                   return Center(
                     child: Text(
                       'No events for ${DateFormat('MMM d').format(_selectedDay ?? _focusedDay)}',
@@ -267,14 +311,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   padding: const EdgeInsets.all(16),
                   children: [
                     Text(
-                      'Events for ${DateFormat('MMM d').format(_selectedDay ?? _focusedDay)}',
+                      'Items for ${DateFormat('MMM d').format(_selectedDay ?? _focusedDay)}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    ...selectedEvents.map((event) => _buildEventCard(event)),
+                    ...selectedEntries.map((entry) => _buildEntryCard(entry)),
                   ],
                 );
               },
@@ -291,26 +335,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     );
   }
 
-  Widget _buildParticipantButton(IconData icon, bool isSelected) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isSelected ? Colors.black : Colors.transparent,
-        borderRadius: BorderRadius.circular(999), // большой радиус = круг
-        border: Border.all(
-          color: isSelected ? Colors.black : Colors.grey.shade300,
-          width: 2,
-        ),
-      ),
-      child: Icon(
-        icon,
-        color: isSelected ? Colors.white : Colors.grey,
-        size: 24,
-      ),
-    );
-  }
-
-  Widget _buildEventCard(HealthEvent event) {
+  Widget _buildEntryCard(_CalendarItem item) {
+    final color = categoryColors[item.category] ?? Colors.grey;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -323,12 +349,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: categoryColors[event.category]?.withOpacity(0.2),
+              color: color.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              Icons.calendar_today,
-              color: categoryColors[event.category],
+              item.type == _CalendarItemType.event
+                  ? Icons.calendar_today
+                  : Icons.insert_drive_file,
+              color: color,
             ),
           ),
           const SizedBox(width: 16),
@@ -337,16 +365,16 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  event.title,
+                  item.title,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                if (event.description != null) ...[
+                if (item.description != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    event.description!,
+                    item.description!,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade600,
@@ -360,4 +388,22 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       ),
     );
   }
+}
+
+enum _CalendarItemType { event, file }
+
+class _CalendarItem {
+  final DateTime date;
+  final String title;
+  final String? description;
+  final String category;
+  final _CalendarItemType type;
+
+  _CalendarItem({
+    required this.date,
+    required this.title,
+    this.description,
+    required this.category,
+    required this.type,
+  });
 }

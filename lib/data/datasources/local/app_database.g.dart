@@ -1362,6 +1362,24 @@ class $FilesTable extends Files with TableInfo<$FilesTable, DbFile> {
   late final GeneratedColumn<DateTime> fileDate = GeneratedColumn<DateTime>(
       'file_date', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _mimeTypeMeta =
+      const VerificationMeta('mimeType');
+  @override
+  late final GeneratedColumn<String> mimeType = GeneratedColumn<String>(
+      'mime_type', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _previewPathMeta =
+      const VerificationMeta('previewPath');
+  @override
+  late final GeneratedColumn<String> previewPath = GeneratedColumn<String>(
+      'preview_path', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _pageCountMeta =
+      const VerificationMeta('pageCount');
+  @override
+  late final GeneratedColumn<int> pageCount = GeneratedColumn<int>(
+      'page_count', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -1381,6 +1399,9 @@ class $FilesTable extends Files with TableInfo<$FilesTable, DbFile> {
         source,
         fileSize,
         fileDate,
+        mimeType,
+        previewPath,
+        pageCount,
         createdAt
       ];
   @override
@@ -1442,6 +1463,20 @@ class $FilesTable extends Files with TableInfo<$FilesTable, DbFile> {
     } else if (isInserting) {
       context.missing(_fileDateMeta);
     }
+    if (data.containsKey('mime_type')) {
+      context.handle(_mimeTypeMeta,
+          mimeType.isAcceptableOrUnknown(data['mime_type']!, _mimeTypeMeta));
+    }
+    if (data.containsKey('preview_path')) {
+      context.handle(
+          _previewPathMeta,
+          previewPath.isAcceptableOrUnknown(
+              data['preview_path']!, _previewPathMeta));
+    }
+    if (data.containsKey('page_count')) {
+      context.handle(_pageCountMeta,
+          pageCount.isAcceptableOrUnknown(data['page_count']!, _pageCountMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -1473,6 +1508,12 @@ class $FilesTable extends Files with TableInfo<$FilesTable, DbFile> {
           .read(DriftSqlType.int, data['${effectivePrefix}file_size']),
       fileDate: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}file_date'])!,
+      mimeType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}mime_type']),
+      previewPath: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}preview_path']),
+      pageCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}page_count']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
     );
@@ -1496,6 +1537,9 @@ class DbFile extends DataClass implements Insertable<DbFile> {
   final String source;
   final int? fileSize;
   final DateTime fileDate;
+  final String? mimeType;
+  final String? previewPath;
+  final int? pageCount;
   final DateTime createdAt;
   const DbFile(
       {required this.id,
@@ -1507,6 +1551,9 @@ class DbFile extends DataClass implements Insertable<DbFile> {
       required this.source,
       this.fileSize,
       required this.fileDate,
+      this.mimeType,
+      this.previewPath,
+      this.pageCount,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1522,6 +1569,15 @@ class DbFile extends DataClass implements Insertable<DbFile> {
       map['file_size'] = Variable<int>(fileSize);
     }
     map['file_date'] = Variable<DateTime>(fileDate);
+    if (!nullToAbsent || mimeType != null) {
+      map['mime_type'] = Variable<String>(mimeType);
+    }
+    if (!nullToAbsent || previewPath != null) {
+      map['preview_path'] = Variable<String>(previewPath);
+    }
+    if (!nullToAbsent || pageCount != null) {
+      map['page_count'] = Variable<int>(pageCount);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -1539,6 +1595,14 @@ class DbFile extends DataClass implements Insertable<DbFile> {
           ? const Value.absent()
           : Value(fileSize),
       fileDate: Value(fileDate),
+      mimeType:
+          mimeType == null && nullToAbsent ? const Value.absent() : Value(mimeType),
+      previewPath: previewPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(previewPath),
+      pageCount: pageCount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pageCount),
       createdAt: Value(createdAt),
     );
   }
@@ -1556,6 +1620,9 @@ class DbFile extends DataClass implements Insertable<DbFile> {
       source: serializer.fromJson<String>(json['source']),
       fileSize: serializer.fromJson<int?>(json['fileSize']),
       fileDate: serializer.fromJson<DateTime>(json['fileDate']),
+      mimeType: serializer.fromJson<String?>(json['mimeType']),
+      previewPath: serializer.fromJson<String?>(json['previewPath']),
+      pageCount: serializer.fromJson<int?>(json['pageCount']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -1572,6 +1639,9 @@ class DbFile extends DataClass implements Insertable<DbFile> {
       'source': serializer.toJson<String>(source),
       'fileSize': serializer.toJson<int?>(fileSize),
       'fileDate': serializer.toJson<DateTime>(fileDate),
+      'mimeType': serializer.toJson<String?>(mimeType),
+      'previewPath': serializer.toJson<String?>(previewPath),
+      'pageCount': serializer.toJson<int?>(pageCount),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -1586,6 +1656,9 @@ class DbFile extends DataClass implements Insertable<DbFile> {
           String? source,
           Value<int?> fileSize = const Value.absent(),
           DateTime? fileDate,
+          Value<String?> mimeType = const Value.absent(),
+          Value<String?> previewPath = const Value.absent(),
+          Value<int?> pageCount = const Value.absent(),
           DateTime? createdAt}) =>
       DbFile(
         id: id ?? this.id,
@@ -1597,6 +1670,9 @@ class DbFile extends DataClass implements Insertable<DbFile> {
         source: source ?? this.source,
         fileSize: fileSize.present ? fileSize.value : this.fileSize,
         fileDate: fileDate ?? this.fileDate,
+        mimeType: mimeType.present ? mimeType.value : this.mimeType,
+        previewPath: previewPath.present ? previewPath.value : this.previewPath,
+        pageCount: pageCount.present ? pageCount.value : this.pageCount,
         createdAt: createdAt ?? this.createdAt,
       );
   DbFile copyWithCompanion(FilesCompanion data) {
@@ -1612,6 +1688,10 @@ class DbFile extends DataClass implements Insertable<DbFile> {
       source: data.source.present ? data.source.value : this.source,
       fileSize: data.fileSize.present ? data.fileSize.value : this.fileSize,
       fileDate: data.fileDate.present ? data.fileDate.value : this.fileDate,
+      mimeType: data.mimeType.present ? data.mimeType.value : this.mimeType,
+      previewPath:
+          data.previewPath.present ? data.previewPath.value : this.previewPath,
+      pageCount: data.pageCount.present ? data.pageCount.value : this.pageCount,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1628,6 +1708,9 @@ class DbFile extends DataClass implements Insertable<DbFile> {
           ..write('source: $source, ')
           ..write('fileSize: $fileSize, ')
           ..write('fileDate: $fileDate, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('previewPath: $previewPath, ')
+          ..write('pageCount: $pageCount, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -1635,7 +1718,8 @@ class DbFile extends DataClass implements Insertable<DbFile> {
 
   @override
   int get hashCode => Object.hash(id, participantId, fileId, title, type,
-      filePath, source, fileSize, fileDate, createdAt);
+      filePath, source, fileSize, fileDate, mimeType, previewPath, pageCount,
+      createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1649,6 +1733,9 @@ class DbFile extends DataClass implements Insertable<DbFile> {
           other.source == this.source &&
           other.fileSize == this.fileSize &&
           other.fileDate == this.fileDate &&
+          other.mimeType == this.mimeType &&
+          other.previewPath == this.previewPath &&
+          other.pageCount == this.pageCount &&
           other.createdAt == this.createdAt);
 }
 
@@ -1662,6 +1749,9 @@ class FilesCompanion extends UpdateCompanion<DbFile> {
   final Value<String> source;
   final Value<int?> fileSize;
   final Value<DateTime> fileDate;
+  final Value<String?> mimeType;
+  final Value<String?> previewPath;
+  final Value<int?> pageCount;
   final Value<DateTime> createdAt;
   const FilesCompanion({
     this.id = const Value.absent(),
@@ -1673,6 +1763,9 @@ class FilesCompanion extends UpdateCompanion<DbFile> {
     this.source = const Value.absent(),
     this.fileSize = const Value.absent(),
     this.fileDate = const Value.absent(),
+    this.mimeType = const Value.absent(),
+    this.previewPath = const Value.absent(),
+    this.pageCount = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   FilesCompanion.insert({
@@ -1685,6 +1778,9 @@ class FilesCompanion extends UpdateCompanion<DbFile> {
     required String source,
     this.fileSize = const Value.absent(),
     required DateTime fileDate,
+    this.mimeType = const Value.absent(),
+    this.previewPath = const Value.absent(),
+    this.pageCount = const Value.absent(),
     this.createdAt = const Value.absent(),
   })  : participantId = Value(participantId),
         fileId = Value(fileId),
@@ -1702,6 +1798,9 @@ class FilesCompanion extends UpdateCompanion<DbFile> {
     Expression<String>? source,
     Expression<int>? fileSize,
     Expression<DateTime>? fileDate,
+    Expression<String>? mimeType,
+    Expression<String>? previewPath,
+    Expression<int>? pageCount,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -1714,6 +1813,9 @@ class FilesCompanion extends UpdateCompanion<DbFile> {
       if (source != null) 'source': source,
       if (fileSize != null) 'file_size': fileSize,
       if (fileDate != null) 'file_date': fileDate,
+      if (mimeType != null) 'mime_type': mimeType,
+      if (previewPath != null) 'preview_path': previewPath,
+      if (pageCount != null) 'page_count': pageCount,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -1728,6 +1830,9 @@ class FilesCompanion extends UpdateCompanion<DbFile> {
       Value<String>? source,
       Value<int?>? fileSize,
       Value<DateTime>? fileDate,
+      Value<String?>? mimeType,
+      Value<String?>? previewPath,
+      Value<int?>? pageCount,
       Value<DateTime>? createdAt}) {
     return FilesCompanion(
       id: id ?? this.id,
@@ -1739,6 +1844,9 @@ class FilesCompanion extends UpdateCompanion<DbFile> {
       source: source ?? this.source,
       fileSize: fileSize ?? this.fileSize,
       fileDate: fileDate ?? this.fileDate,
+      mimeType: mimeType ?? this.mimeType,
+      previewPath: previewPath ?? this.previewPath,
+      pageCount: pageCount ?? this.pageCount,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -1773,6 +1881,15 @@ class FilesCompanion extends UpdateCompanion<DbFile> {
     if (fileDate.present) {
       map['file_date'] = Variable<DateTime>(fileDate.value);
     }
+    if (mimeType.present) {
+      map['mime_type'] = Variable<String>(mimeType.value);
+    }
+    if (previewPath.present) {
+      map['preview_path'] = Variable<String>(previewPath.value);
+    }
+    if (pageCount.present) {
+      map['page_count'] = Variable<int>(pageCount.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1791,6 +1908,9 @@ class FilesCompanion extends UpdateCompanion<DbFile> {
           ..write('source: $source, ')
           ..write('fileSize: $fileSize, ')
           ..write('fileDate: $fileDate, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('previewPath: $previewPath, ')
+          ..write('pageCount: $pageCount, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -3167,6 +3287,9 @@ typedef $$FilesTableCreateCompanionBuilder = FilesCompanion Function({
   required String source,
   Value<int?> fileSize,
   required DateTime fileDate,
+  Value<String?> mimeType,
+  Value<String?> previewPath,
+  Value<int?> pageCount,
   Value<DateTime> createdAt,
 });
 typedef $$FilesTableUpdateCompanionBuilder = FilesCompanion Function({
@@ -3179,6 +3302,9 @@ typedef $$FilesTableUpdateCompanionBuilder = FilesCompanion Function({
   Value<String> source,
   Value<int?> fileSize,
   Value<DateTime> fileDate,
+  Value<String?> mimeType,
+  Value<String?> previewPath,
+  Value<int?> pageCount,
   Value<DateTime> createdAt,
 });
 

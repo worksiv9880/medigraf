@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../../../data/datasources/local/app_database.dart';
 import '../../../../services/file_service.dart';
+import '../../../widgets/file_source_picker.dart';
 
 class FileUploadData {
   final int participantId;
   final String title;
   final String type;
   final FileMetadata file;
+  final DateTime fileDate;
 
   const FileUploadData({
     required this.participantId,
     required this.title,
     required this.type,
     required this.file,
+    required this.fileDate,
   });
 }
 
@@ -26,6 +29,7 @@ class FileUploadForm extends StatefulWidget {
     this.initialParticipantId,
     this.initialTitle,
     this.initialType = 'GENERAL',
+    this.initialFileDate,
     this.documentTypes = const [
       'GENERAL',
       'PRESCRIPTION',
@@ -42,6 +46,7 @@ class FileUploadForm extends StatefulWidget {
   final int? initialParticipantId;
   final String? initialTitle;
   final String initialType;
+  final DateTime? initialFileDate;
   final List<String> documentTypes;
   final bool showActions;
 
@@ -56,6 +61,7 @@ class _FileUploadFormState extends State<FileUploadForm> {
   String? _selectedType;
   int? _selectedParticipantId;
   FileMetadata? _selectedFile;
+  late DateTime _selectedDate;
   bool _isSubmitting = false;
 
   @override
@@ -64,6 +70,7 @@ class _FileUploadFormState extends State<FileUploadForm> {
     _titleController = TextEditingController(text: widget.initialTitle ?? '');
     _selectedType = widget.initialType;
     _selectedParticipantId = widget.initialParticipantId;
+    _selectedDate = widget.initialFileDate ?? DateTime.now();
   }
 
   @override
@@ -73,12 +80,35 @@ class _FileUploadFormState extends State<FileUploadForm> {
   }
 
   Future<void> _pickFile() async {
-    final file = await widget.fileService.pickFromGallery();
-    if (file == null) return;
+    final files = await showFileSourcePicker(
+      context,
+      widget.fileService,
+      allowMultipleFromGallery: false,
+    );
+    if (files.isEmpty) return;
 
     setState(() {
-      _selectedFile = file;
+      _selectedFile = files.first;
+      _selectedDate = files.first.createdAt;
     });
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final initialDate = _selectedDate.isBefore(DateTime(1900)) ? now : _selectedDate;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 5),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -120,6 +150,7 @@ class _FileUploadFormState extends State<FileUploadForm> {
           title: _titleController.text.trim(),
           type: resolvedType,
           file: _selectedFile!,
+          fileDate: _selectedDate,
         ),
       );
     } catch (e) {
@@ -217,6 +248,41 @@ class _FileUploadFormState extends State<FileUploadForm> {
               return null;
             },
           ),
+          const SizedBox(height: 16),
+          _SectionLabel('Document Date'),
+          const SizedBox(height: 8),
+          FormField<DateTime>(
+            validator: (_) => null,
+            builder: (state) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InkWell(
+                  onTap: _isSubmitting ? null : _pickDate,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InputDecorator(
+                    decoration: _inputDecoration(),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _formatDate(_selectedDate),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const Icon(Icons.calendar_today),
+                      ],
+                    ),
+                  ),
+                ),
+                if (state.hasError) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    state.errorText!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
+                  ),
+                ],
+              ],
+            ),
+          ),
           if (widget.showActions) ...[
             const SizedBox(height: 24),
             Row(
@@ -265,6 +331,10 @@ class _FileUploadFormState extends State<FileUploadForm> {
     if (type.isEmpty) return type;
     final lower = type.toLowerCase();
     return lower[0].toUpperCase() + lower.substring(1);
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
   }
 }
 

@@ -6,6 +6,7 @@ import 'dart:io';
 import '../../core/di/providers.dart';
 import '../../data/datasources/local/app_database.dart';
 import '../../services/file_service.dart';
+import 'file_source_picker.dart';
 
 enum EventSheetContext { calendar, charts, documents }
 
@@ -176,35 +177,19 @@ class _EventBottomSheetState extends ConsumerState<EventBottomSheet> {
     });
   }
 
-  Future<void> _pickFromCamera() async {
+  Future<void> _pickFile() async {
     setState(() => _isLoading = true);
-    final file = await _fileService.pickFromCamera();
-    if (file != null) {
-      setState(() => _files.add(file));
+    final files = await showFileSourcePicker(
+      context,
+      _fileService,
+      allowMultipleFromGallery: true,
+    );
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _files.addAll(files);
+      });
     }
-    setState(() => _isLoading = false);
-  }
-
-  Future<void> _pickFromGallery() async {
-    setState(() => _isLoading = true);
-    final files = await _fileService.pickMultipleFromGallery();
-    if (files.isNotEmpty) {
-      setState(() => _files.addAll(files));
-    }
-    setState(() => _isLoading = false);
-  }
-
-  Future<void> _scanDocument() async {
-    setState(() => _isLoading = true);
-    final files = await _fileService.scanDocument();
-    if (files.isNotEmpty) {
-      setState(() => _files.addAll(files));
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No document scanned')),
-      );
-    }
-    setState(() => _isLoading = false);
   }
 
   void _removeFile(int index) {
@@ -457,69 +442,10 @@ class _EventBottomSheetState extends ConsumerState<EventBottomSheet> {
                               itemCount: _files.length,
                               itemBuilder: (context, index) {
                                 final file = _files[index];
-                                return Container(
-                                  margin: const EdgeInsets.only(right: 8),
-                                  width: 120,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade200,
-                                    borderRadius: BorderRadius.circular(8),
-                                    image: DecorationImage(
-                                      image: FileImage(File(file.path)),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                  child: Stack(
-                                    children: [
-                                      Positioned(
-                                        top: 4,
-                                        right: 4,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: Colors.black54,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: IconButton(
-                                            icon: const Icon(Icons.close, size: 16, color: Colors.white),
-                                            onPressed: () => _removeFile(index),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        bottom: 4,
-                                        left: 4,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black54,
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                file.source == FileSource.camera
-                                                    ? Icons.camera_alt
-                                                    : file.source == FileSource.scanner
-                                                        ? Icons.document_scanner
-                                                        : Icons.photo_library,
-                                                size: 12,
-                                                color: Colors.white,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              if (file.fileSize != null)
-                                                Text(
-                                                  _fileService.formatFileSize(file.fileSize!),
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 10,
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                return _FilePreviewCard(
+                                  file: file,
+                                  onRemove: () => _removeFile(index),
+                                  fileService: _fileService,
                                 );
                               },
                             ),
@@ -527,33 +453,12 @@ class _EventBottomSheetState extends ConsumerState<EventBottomSheet> {
                         const SizedBox(height: 8),
                         if (_isLoading)
                           const Center(child: CircularProgressIndicator())
-                        else ...[
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: _pickFromGallery,
-                                  icon: const Icon(Icons.photo_library),
-                                  label: const Text('Gallery'),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: _pickFromCamera,
-                                  icon: const Icon(Icons.camera_alt),
-                                  label: const Text('Camera'),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
+                        else
                           OutlinedButton.icon(
-                            onPressed: _scanDocument,
-                            icon: const Icon(Icons.document_scanner),
-                            label: const Text('Scan Document'),
+                            onPressed: _pickFile,
+                            icon: const Icon(Icons.upload_file),
+                            label: const Text('Select file'),
                           ),
-                        ],
                       ],
                     ),
                   ),
@@ -658,6 +563,121 @@ class _EventBottomSheetState extends ConsumerState<EventBottomSheet> {
         child,
         const SizedBox(height: 24),
       ],
+    );
+  }
+}
+
+class _FilePreviewCard extends StatelessWidget {
+  const _FilePreviewCard({
+    required this.file,
+    required this.onRemove,
+    required this.fileService,
+  });
+
+  final FileMetadata file;
+  final VoidCallback onRemove;
+  final FileService fileService;
+
+  @override
+  Widget build(BuildContext context) {
+    final previewPath = file.previewPath;
+    final isImageFile = (file.mimeType ?? '').startsWith('image/');
+    final hasPreviewFile =
+        previewPath != null && previewPath.isNotEmpty && File(previewPath).existsSync();
+    final decorationImage = (isImageFile && hasPreviewFile)
+        ? DecorationImage(image: FileImage(File(previewPath!)), fit: BoxFit.cover)
+        : null;
+
+    IconData sourceIcon;
+    switch (file.source) {
+      case FileSource.camera:
+        sourceIcon = Icons.camera_alt;
+        break;
+      case FileSource.scanner:
+        sourceIcon = Icons.document_scanner;
+        break;
+      case FileSource.filePicker:
+        sourceIcon = Icons.insert_drive_file;
+        break;
+      case FileSource.gallery:
+      default:
+        sourceIcon = Icons.photo_library;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      width: 120,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(8),
+        image: decorationImage,
+      ),
+      child: Stack(
+        children: [
+          if (decorationImage == null)
+            Center(
+              child: Icon(
+                Icons.insert_drive_file,
+                color: Colors.grey.shade700,
+                size: 32,
+              ),
+            ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.close, size: 16, color: Colors.white),
+                onPressed: onRemove,
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 4,
+            left: 4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    sourceIcon,
+                    size: 12,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 4),
+                  if (file.fileSize != null)
+                    Text(
+                      fileService.formatFileSize(file.fileSize!),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                      ),
+                    ),
+                  if (file.pageCount != null) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      '${file.pageCount}p',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
