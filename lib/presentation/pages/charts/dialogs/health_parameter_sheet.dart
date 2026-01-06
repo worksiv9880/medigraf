@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/di/providers.dart';
 import '../../../../data/datasources/local/app_database.dart';
+import '../models/chart_parameter.dart';
 
 enum _ParameterMode { custom, existing }
 
@@ -32,7 +33,7 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
 
   _ParameterMode _mode = _ParameterMode.custom;
   Participant? _selectedParticipant;
-  Metric? _selectedMetric;
+  ChartParameter? _selectedParameter;
   DateTime _selectedDate = DateTime.now();
   bool _isSaving = false;
 
@@ -46,35 +47,35 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
 
   void _syncDefaults({
     required List<Participant> participants,
-    required List<Metric> metrics,
+    required List<ChartParameter> parameters,
   }) {
     Participant? nextParticipant = _selectedParticipant;
-    Metric? nextMetric = _selectedMetric;
+    ChartParameter? nextParameter = _selectedParameter;
 
     if (nextParticipant == null && participants.isNotEmpty) {
       nextParticipant = participants.first;
     }
 
     if (_mode == _ParameterMode.existing &&
-        nextMetric == null &&
-        metrics.isNotEmpty) {
-      nextMetric = metrics.first;
+        nextParameter == null &&
+        parameters.isNotEmpty) {
+      nextParameter = parameters.first;
     }
 
     final shouldUpdate = nextParticipant != _selectedParticipant ||
-        nextMetric != _selectedMetric ||
+        nextParameter != _selectedParameter ||
         (_mode == _ParameterMode.existing &&
-            nextMetric != null &&
-            _unitController.text != nextMetric.unit);
+            nextParameter != null &&
+            _unitController.text != nextParameter.unit);
 
     if (shouldUpdate) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         setState(() {
           _selectedParticipant = nextParticipant;
-          _selectedMetric = nextMetric;
-          if (_mode == _ParameterMode.existing && nextMetric != null) {
-            _unitController.text = nextMetric.unit;
+          _selectedParameter = nextParameter;
+          if (_mode == _ParameterMode.existing && nextParameter != null) {
+            _unitController.text = nextParameter.unit;
           }
         });
       });
@@ -118,7 +119,7 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
         );
         return;
       }
-    } else if (_selectedMetric == null) {
+    } else if (_selectedParameter == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a parameter.')),
       );
@@ -139,7 +140,20 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
           ),
         );
       } else {
-        metricId = _selectedMetric!.id;
+        final selectedParameter = _selectedParameter!;
+        final existingMetric = await db.getMetricForParticipantByName(
+          participant.id,
+          selectedParameter.name,
+          selectedParameter.unit,
+        );
+        metricId = existingMetric?.id ??
+            await db.addMetric(
+              MetricsCompanion(
+                participantId: drift.Value(participant.id),
+                name: drift.Value(selectedParameter.name),
+                unit: drift.Value(selectedParameter.unit),
+              ),
+            );
       }
 
       await db.addDataPoint(
@@ -202,177 +216,194 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
           Expanded(
             child: participantsAsync.when(
               data: (participants) {
-                final metricsAsync = _selectedParticipant == null
-                    ? const AsyncValue<List<Metric>>.data([])
-                    : ref.watch(metricsProvider(_selectedParticipant!.id));
+                final metricsAsyncList = participants
+                    .map((participant) =>
+                        ref.watch(metricsProvider(participant.id)))
+                    .toList();
 
-                return metricsAsync.when(
-                  data: (metrics) {
-                    _syncDefaults(participants: participants, metrics: metrics);
+                if (metricsAsyncList.any((value) => value.isLoading)) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                    return SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _Section(
-                            title: 'Profile',
-                            child: DropdownButtonFormField<Participant>(
-                              value: _selectedParticipant,
-                              decoration: const InputDecoration(
-                                hintText: 'Select profile',
-                              ),
-                              items: participants
-                                  .map(
-                                    (participant) => DropdownMenuItem(
-                                      value: participant,
-                                      child: Text(
-                                        '${participant.emoji} ${participant.name}',
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (participant) {
-                                setState(() {
-                                  _selectedParticipant = participant;
-                                  _selectedMetric = null;
-                                  _unitController.clear();
-                                });
-                              },
-                            ),
+                final errorValue = metricsAsyncList
+                    .cast<AsyncValue<List<Metric>>>()
+                    .firstWhere(
+                      (value) => value.hasError,
+                      orElse: () => const AsyncValue<List<Metric>>.data([]),
+                    );
+                if (errorValue.hasError) {
+                  return Center(child: Text('Error: ${errorValue.error}'));
+                }
+
+                final metrics = metricsAsyncList
+                    .expand((value) => value.value ?? [])
+                    .toList();
+                final parameters = _buildParameters(metrics);
+
+                _syncDefaults(
+                  participants: participants,
+                  parameters: parameters,
+                );
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _Section(
+                        title: 'Profile',
+                        child: DropdownButtonFormField<Participant>(
+                          value: _selectedParticipant,
+                          decoration: const InputDecoration(
+                            hintText: 'Select profile',
                           ),
-                          _Section(
-                            title: 'Parameter Type',
-                            child: DropdownButtonFormField<_ParameterMode>(
-                              value: _mode,
-                              decoration:
-                                  const InputDecoration(hintText: 'Select type'),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: _ParameterMode.custom,
-                                  child: Text('Custom Parameter'),
-                                ),
-                                DropdownMenuItem(
-                                  value: _ParameterMode.existing,
-                                  child: Text('Existing Parameter'),
-                                ),
-                              ],
-                              onChanged: (mode) {
-                                if (mode == null) return;
-                                setState(() {
-                                  _mode = mode;
-                                  if (_mode == _ParameterMode.custom) {
-                                    _selectedMetric = null;
-                                  }
-                                });
-                              },
-                            ),
-                          ),
-                          if (_mode == _ParameterMode.existing)
-                            _Section(
-                              title: 'Parameter',
-                              child: DropdownButtonFormField<Metric>(
-                                value: _selectedMetric,
-                                decoration: const InputDecoration(
-                                  hintText: 'Select parameter',
-                                ),
-                                items: metrics
-                                    .map(
-                                      (metric) => DropdownMenuItem(
-                                        value: metric,
-                                        child: Text(
-                                          '${metric.name} (${metric.unit})',
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
-                                onChanged: (metric) {
-                                  setState(() {
-                                    _selectedMetric = metric;
-                                    _unitController.text = metric?.unit ?? '';
-                                  });
-                                },
-                              ),
-                            ),
-                          if (_mode == _ParameterMode.custom)
-                            _Section(
-                              title: 'Custom Parameter Name',
-                              child: TextField(
-                                controller: _customNameController,
-                                decoration: const InputDecoration(
-                                  hintText: 'e.g., Oxygen Saturation',
-                                ),
-                              ),
-                            ),
-                          _Section(
-                            title: 'Value',
-                            child: TextField(
-                              controller: _valueController,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                hintText: 'e.g., 120',
-                              ),
-                            ),
-                          ),
-                          _Section(
-                            title: 'Unit',
-                            child: TextField(
-                              controller: _unitController,
-                              enabled: _mode == _ParameterMode.custom,
-                              decoration: const InputDecoration(
-                                hintText: 'e.g., mmHg, mg/dL, bpm',
-                              ),
-                            ),
-                          ),
-                          _Section(
-                            title: 'Date',
-                            child: InkWell(
-                              onTap: _selectDate,
-                              child: InputDecorator(
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        DateFormat('dd/MM/yyyy')
-                                            .format(_selectedDate),
-                                      ),
-                                    ),
-                                    const Icon(Icons.calendar_today, size: 18),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Cancel'),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FilledButton.icon(
-                                  onPressed: _isSaving ? null : _save,
-                                  icon: const Icon(Icons.favorite_border),
-                                  label: Text(
-                                    _isSaving ? 'Saving...' : 'Add Parameter',
+                          items: participants
+                              .map(
+                                (participant) => DropdownMenuItem(
+                                  value: participant,
+                                  child: Text(
+                                    '${participant.emoji} ${participant.name}',
                                   ),
                                 ),
+                              )
+                              .toList(),
+                          onChanged: (participant) {
+                            setState(() {
+                              _selectedParticipant = participant;
+                              _selectedParameter = null;
+                              _unitController.clear();
+                            });
+                          },
+                        ),
+                      ),
+                      _Section(
+                        title: 'Parameter Type',
+                        child: DropdownButtonFormField<_ParameterMode>(
+                          value: _mode,
+                          decoration:
+                              const InputDecoration(hintText: 'Select type'),
+                          items: const [
+                            DropdownMenuItem(
+                              value: _ParameterMode.custom,
+                              child: Text('Custom Parameter'),
+                            ),
+                            DropdownMenuItem(
+                              value: _ParameterMode.existing,
+                              child: Text('Existing Parameter'),
+                            ),
+                          ],
+                          onChanged: (mode) {
+                            if (mode == null) return;
+                            setState(() {
+                              _mode = mode;
+                              if (_mode == _ParameterMode.custom) {
+                                _selectedParameter = null;
+                              }
+                            });
+                          },
+                        ),
+                      ),
+                      if (_mode == _ParameterMode.existing)
+                        _Section(
+                          title: 'Parameter',
+                          child: DropdownButtonFormField<ChartParameter>(
+                            value: _selectedParameter,
+                            decoration: const InputDecoration(
+                              hintText: 'Select parameter',
+                            ),
+                            items: parameters
+                                .map(
+                                  (parameter) => DropdownMenuItem(
+                                    value: parameter,
+                                    child: Text(
+                                      '${parameter.name} (${parameter.unit})',
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (parameter) {
+                              setState(() {
+                                _selectedParameter = parameter;
+                                _unitController.text = parameter?.unit ?? '';
+                              });
+                            },
+                          ),
+                        ),
+                      if (_mode == _ParameterMode.custom)
+                        _Section(
+                          title: 'Custom Parameter Name',
+                          child: TextField(
+                            controller: _customNameController,
+                            decoration: const InputDecoration(
+                              hintText: 'e.g., Oxygen Saturation',
+                            ),
+                          ),
+                        ),
+                      _Section(
+                        title: 'Value',
+                        child: TextField(
+                          controller: _valueController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            hintText: 'e.g., 120',
+                          ),
+                        ),
+                      ),
+                      _Section(
+                        title: 'Unit',
+                        child: TextField(
+                          controller: _unitController,
+                          enabled: _mode == _ParameterMode.custom,
+                          decoration: const InputDecoration(
+                            hintText: 'e.g., mmHg, mg/dL, bpm',
+                          ),
+                        ),
+                      ),
+                      _Section(
+                        title: 'Date',
+                        child: InkWell(
+                          onTap: _selectDate,
+                          child: InputDecorator(
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    DateFormat('dd/MM/yyyy')
+                                        .format(_selectedDate),
+                                  ),
+                                ),
+                                const Icon(Icons.calendar_today, size: 18),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Cancel'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: _isSaving ? null : _save,
+                              icon: const Icon(Icons.favorite_border),
+                              label: Text(
+                                _isSaving ? 'Saving...' : 'Add Parameter',
                               ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
-                    );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Center(child: Text('Error: $e')),
+                    ],
+                  ),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -408,4 +439,15 @@ class _Section extends StatelessWidget {
       ),
     );
   }
+}
+
+List<ChartParameter> _buildParameters(List<Metric> metrics) {
+  final parameters = <ChartParameter>{};
+
+  for (final metric in metrics) {
+    parameters.add(ChartParameter(name: metric.name, unit: metric.unit));
+  }
+
+  return parameters.toList()
+    ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 }

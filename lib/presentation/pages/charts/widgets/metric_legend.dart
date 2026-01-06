@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../../data/datasources/local/app_database.dart';
+import '../models/chart_parameter.dart';
 import '../utils/chart_colors.dart';
 
 class MetricLegend extends StatelessWidget {
-  final List<Metric> metrics;
-  final Metric selectedMetric;
-  final ValueChanged<Metric> onSelected;
+  final List<ChartParameter> metrics;
+  final ChartParameter selectedMetric;
+  final ValueChanged<ChartParameter> onSelected;
 
   const MetricLegend({
     super.key,
@@ -21,7 +21,7 @@ class MetricLegend extends StatelessWidget {
       child: Wrap(
         spacing: 16,
         children: metrics.take(6).map((metric) {
-          final isSelected = metric.id == selectedMetric.id;
+          final isSelected = metric == selectedMetric;
           final color =
               chartColors[metrics.indexOf(metric) % chartColors.length];
 

@@ -1,7 +1,7 @@
-import '../../../../data/datasources/local/app_database.dart';
+import '../models/chart_parameter.dart';
 
 class ChartsState {
-  Metric? selectedMetric;
+  ChartParameter? selectedMetric;
   int selectedDays;
 
   ChartsState({
