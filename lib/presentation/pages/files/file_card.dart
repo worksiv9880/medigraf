@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../data/datasources/local/app_database.dart';
 
 class FileCard extends StatelessWidget {
@@ -8,6 +9,7 @@ class FileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final formattedDate = DateFormat('dd.MM.yyyy').format(file.fileDate);
     return InkWell(
       onTap: () {
         // OpenFile.open(file.filePath);
@@ -43,7 +45,7 @@ class FileCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    file.fileDate.toString(),
+                    formattedDate,
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade600,
