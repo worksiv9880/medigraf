@@ -217,8 +217,10 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
             child: participantsAsync.when(
               data: (participants) {
                 final metricsAsyncList = participants
-                    .map((participant) =>
-                        ref.watch(metricsProvider(participant.id)))
+                    .map<AsyncValue<List<Metric>>>(
+                      (participant) =>
+                          ref.watch(metricsProvider(participant.id)),
+                    )
                     .toList();
 
                 if (metricsAsyncList.any((value) => value.isLoading)) {
@@ -236,7 +238,7 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                 }
 
                 final metrics = metricsAsyncList
-                    .expand((value) => value.value ?? [])
+                    .expand((value) => value.value ?? <Metric>[])
                     .toList();
                 final parameters = _buildParameters(metrics);
 

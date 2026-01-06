@@ -98,7 +98,9 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
     final state = widget.state;
     final participantsAsync = ref.watch(participantsProvider);
     final metricsAsyncList = selectedParticipants
-        .map((participantId) => ref.watch(metricsProvider(participantId)))
+        .map<AsyncValue<List<Metric>>>(
+          (participantId) => ref.watch(metricsProvider(participantId)),
+        )
         .toList();
 
     if (metricsAsyncList.any((value) => value.isLoading)) {
@@ -115,8 +117,9 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
       return Center(child: Text('Error: ${errorValue.error}'));
     }
 
-    final metrics =
-        metricsAsyncList.expand((value) => value.value ?? []).toList();
+    final metrics = metricsAsyncList
+        .expand((value) => value.value ?? <Metric>[])
+        .toList();
     final parameters = _buildParameters(metrics);
 
     return participantsAsync.when(
