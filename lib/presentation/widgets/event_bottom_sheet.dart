@@ -501,7 +501,9 @@ class _EventBottomSheetState extends ConsumerState<EventBottomSheet> {
                                                     ? Icons.camera_alt
                                                     : file.source == FileSource.scanner
                                                         ? Icons.document_scanner
-                                                        : Icons.photo_library,
+                                                        : file.source == FileSource.filePicker
+                                                            ? Icons.insert_drive_file
+                                                            : Icons.photo_library,
                                                 size: 12,
                                                 color: Colors.white,
                                               ),

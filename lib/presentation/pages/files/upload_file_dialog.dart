@@ -80,7 +80,7 @@ class UploadFileDialog extends ConsumerWidget {
                           title: data.title,
                           type: data.type,
                           file: data.file,
-                          fileDate: data.file.createdAt,
+                          fileDate: data.fileDate,
                         );
 
                         if (context.mounted) {

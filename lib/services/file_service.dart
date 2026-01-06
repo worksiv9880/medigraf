@@ -1,11 +1,12 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
-enum FileSource { camera, gallery, scanner }
+enum FileSource { camera, gallery, scanner, filePicker }
 
 class FileMetadata {
   final String id;
@@ -28,6 +29,26 @@ class FileMetadata {
 class FileService {
   final ImagePicker _imagePicker = ImagePicker();
   final Uuid _uuid = const Uuid();
+  static const List<String> _documentExtensions = [
+    'pdf',
+    'doc',
+    'docx',
+    'txt',
+    'rtf',
+    'csv',
+    'xls',
+    'xlsx',
+    'jpg',
+    'jpeg',
+    'png',
+    'heic',
+    'heif',
+    'bmp',
+    'gif',
+    'tiff',
+    'tif',
+    'webp',
+  ];
 
   /// Pick image from camera
   Future<FileMetadata?> pickFromCamera() async {
@@ -53,24 +74,7 @@ class FileService {
 
   /// Pick image from gallery
   Future<FileMetadata?> pickFromGallery() async {
-    try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
-      );
-
-      if (image == null) return null;
-
-      return await _saveFile(
-        image.path,
-        FileSource.gallery,
-      );
-    } catch (e) {
-      print('Error picking from gallery: $e');
-      return null;
-    }
+    return _pickSingleFile();
   }
 
   /// Pick multiple images from gallery
@@ -120,6 +124,28 @@ class FileService {
     } catch (e) {
       print('Error scanning document: $e');
       return [];
+    }
+  }
+
+  Future<FileMetadata?> _pickSingleFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: false,
+        type: FileType.custom,
+        allowedExtensions: _documentExtensions,
+      );
+
+      if (result == null || result.files.isEmpty) return null;
+      final picked = result.files.single;
+      if (picked.path == null) return null;
+
+      return await _saveFile(
+        picked.path!,
+        FileSource.filePicker,
+      );
+    } catch (e) {
+      print('Error picking file: $e');
+      return null;
     }
   }
 
