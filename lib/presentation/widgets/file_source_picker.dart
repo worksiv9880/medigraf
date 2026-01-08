@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../services/file_service.dart';
 
@@ -68,7 +69,16 @@ Future<FileMetadata?> _handleScan(
   BuildContext context,
   FileService fileService,
 ) async {
-  final initialPages = await fileService.scanDocumentRaw(maxPages: 10);
+  final status = await fileService.requestCameraPermission();
+  if (!status.isGranted) {
+    await _showPermissionDialog(context, status);
+    return null;
+  }
+
+  final initialPages = await fileService.scanDocumentRaw(
+    maxPages: 10,
+    ensurePermission: false,
+  );
   if (initialPages.isEmpty) {
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(
       const SnackBar(content: Text('No document scanned')),
@@ -88,6 +98,38 @@ Future<FileMetadata?> _handleScan(
   if (confirmedPages == null || confirmedPages.isEmpty) return null;
 
   return fileService.saveScannedPdf(scannedPaths: confirmedPages);
+}
+
+Future<void> _showPermissionDialog(
+  BuildContext context,
+  PermissionStatus status,
+) async {
+  final isPermanent = status.isPermanentlyDenied || status.isRestricted;
+  return showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Camera permission needed'),
+      content: Text(
+        isPermanent
+            ? 'Enable camera access in Settings to scan documents.'
+            : 'Allow camera access to scan documents.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        if (isPermanent)
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              openAppSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+      ],
+    ),
+  );
 }
 
 class _ScanPreviewDialog extends StatefulWidget {

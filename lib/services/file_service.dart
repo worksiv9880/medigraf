@@ -165,12 +165,17 @@ class FileService {
   }
 
   /// Launch document scanner and return captured image paths.
-  Future<List<String>> scanDocumentRaw({int maxPages = 10}) async {
+  Future<List<String>> scanDocumentRaw({
+    int maxPages = 10,
+    bool ensurePermission = true,
+  }) async {
     try {
-      final hasPermission = await _ensureCameraPermission();
-      if (!hasPermission) {
-        print('Camera permission not granted');
-        return [];
+      if (ensurePermission) {
+        final status = await requestCameraPermission();
+        if (!status.isGranted) {
+          print('Camera permission not granted');
+          return [];
+        }
       }
 
       final List<String>? scannedPaths = await CunningDocumentScanner.getPictures(
@@ -392,11 +397,9 @@ class FileService {
     }
   }
 
-  Future<bool> _ensureCameraPermission() async {
+  Future<PermissionStatus> requestCameraPermission() async {
     final status = await Permission.camera.status;
-    if (status.isGranted) return true;
-
-    final requested = await Permission.camera.request();
-    return requested.isGranted;
+    if (status.isGranted) return status;
+    return Permission.camera.request();
   }
 }
