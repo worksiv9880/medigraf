@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -166,6 +167,12 @@ class FileService {
   /// Launch document scanner and return captured image paths.
   Future<List<String>> scanDocumentRaw({int maxPages = 10}) async {
     try {
+      final hasPermission = await _ensureCameraPermission();
+      if (!hasPermission) {
+        print('Camera permission not granted');
+        return [];
+      }
+
       final List<String>? scannedPaths = await CunningDocumentScanner.getPictures(
         noOfPages: maxPages,
       );
@@ -383,5 +390,13 @@ class FileService {
     } catch (_) {
       return DateTime.now();
     }
+  }
+
+  Future<bool> _ensureCameraPermission() async {
+    final status = await Permission.camera.status;
+    if (status.isGranted) return true;
+
+    final requested = await Permission.camera.request();
+    return requested.isGranted;
   }
 }
