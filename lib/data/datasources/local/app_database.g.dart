@@ -3530,6 +3530,9 @@ class $$FilesTableTableManager extends RootTableManager<
             Value<String> source = const Value.absent(),
             Value<int?> fileSize = const Value.absent(),
             Value<DateTime> fileDate = const Value.absent(),
+            Value<String?> mimeType = const Value.absent(),
+            Value<String?> previewPath = const Value.absent(),
+            Value<int?> pageCount = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
               FilesCompanion(
@@ -3542,6 +3545,9 @@ class $$FilesTableTableManager extends RootTableManager<
             source: source,
             fileSize: fileSize,
             fileDate: fileDate,
+            mimeType: mimeType,
+            previewPath: previewPath,
+            pageCount: pageCount,
             createdAt: createdAt,
           ),
           createCompanionCallback: ({
@@ -3554,6 +3560,9 @@ class $$FilesTableTableManager extends RootTableManager<
             required String source,
             Value<int?> fileSize = const Value.absent(),
             required DateTime fileDate,
+            Value<String?> mimeType = const Value.absent(),
+            Value<String?> previewPath = const Value.absent(),
+            Value<int?> pageCount = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
               FilesCompanion.insert(
@@ -3566,6 +3575,9 @@ class $$FilesTableTableManager extends RootTableManager<
             source: source,
             fileSize: fileSize,
             fileDate: fileDate,
+            mimeType: mimeType,
+            previewPath: previewPath,
+            pageCount: pageCount,
             createdAt: createdAt,
           ),
           withReferenceMapper: (p0) => p0

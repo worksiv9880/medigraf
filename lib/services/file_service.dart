@@ -151,7 +151,7 @@ class FileService {
         picked.path!,
         FileSource.filePicker,
         mimeType: _inferMimeType(picked.extension),
-        createdAt: picked.modifiedTime ?? await _getFileTimestamp(File(picked.path!)),
+        createdAt: await _getFileTimestamp(File(picked.path!)),
       );
     } catch (e) {
       print('Error picking file: $e');
