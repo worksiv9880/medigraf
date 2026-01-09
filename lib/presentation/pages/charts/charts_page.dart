@@ -146,9 +146,16 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
                           tooltip: 'Delete value',
                           icon: const Icon(Icons.delete_outline),
                           onPressed: () async {
-                            await ref
-                                .read(databaseProvider)
-                                .deleteDataPoint(point.id);
+                            final db = ref.read(databaseProvider);
+                            await db.deleteDataPoint(point.id);
+                            final remaining =
+                                await db.getDataPointsForMetric(metric.id);
+                            if (remaining.isEmpty && mounted) {
+                              await db.deleteMetric(metric.id);
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                              }
+                            }
                           },
                         ),
                       );
