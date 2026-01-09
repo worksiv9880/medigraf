@@ -3,22 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import '../../../../core/di/providers.dart';
+import 'package:intl/intl.dart';
+
 import '../../../../data/datasources/local/app_database.dart';
-import '../models/chart_parameter.dart';
 import '../utils/chart_colors.dart';
 
 class MetricChart extends ConsumerWidget {
-  final ChartParameter metric;
   final List<Metric> metrics;
   final List<Participant> participants;
-  final int days;
 
   const MetricChart({
     super.key,
-    required this.metric,
     required this.metrics,
     required this.participants,
-    required this.days,
   });
 
   @override
@@ -46,8 +43,8 @@ class MetricChart extends ConsumerWidget {
       return Center(child: Text('Error: ${errorValue.error}'));
     }
 
-    final cutoff = DateTime.now().subtract(Duration(days: days));
-    final series = <_ParticipantSeries>[];
+    final dateIndex = <DateTime, int>{};
+    final orderedDates = <DateTime>[];
 
     for (var index = 0; index < metrics.length; index++) {
       final metricModel = metrics[index];
@@ -57,17 +54,58 @@ class MetricChart extends ConsumerWidget {
       );
       if (participantIndex == -1) continue;
 
-      final filtered =
-          points.where((p) => p.recordedAt.isAfter(cutoff)).toList();
-      if (filtered.isEmpty) continue;
+      if (points.isEmpty) continue;
 
-      final spots = filtered
-          .asMap()
-          .entries
-          .map((entry) => FlSpot(entry.key.toDouble(), entry.value.value))
+      for (final point in points) {
+        final day = DateTime(
+          point.recordedAt.year,
+          point.recordedAt.month,
+          point.recordedAt.day,
+        );
+        if (!dateIndex.containsKey(day)) {
+          dateIndex[day] = orderedDates.length;
+          orderedDates.add(day);
+        }
+      }
+
+    }
+
+    orderedDates.sort();
+    dateIndex
+      ..clear()
+      ..addEntries(
+        orderedDates.asMap().entries.map(
+              (entry) => MapEntry(entry.value, entry.key),
+            ),
+      );
+
+    final updatedSeries = <_ParticipantSeries>[];
+
+    for (var index = 0; index < metrics.length; index++) {
+      final metricModel = metrics[index];
+      final points = dataAsyncList[index].value ?? [];
+      final participantIndex = participants.indexWhere(
+        (participant) => participant.id == metricModel.participantId,
+      );
+      if (participantIndex == -1 || points.isEmpty) continue;
+
+      final spots = points
+          .map((point) {
+            final day = DateTime(
+              point.recordedAt.year,
+              point.recordedAt.month,
+              point.recordedAt.day,
+            );
+            final x = dateIndex[day];
+            if (x == null) return null;
+            return FlSpot(x.toDouble(), point.value);
+          })
+          .whereType<FlSpot>()
           .toList();
 
-      series.add(
+      if (spots.isEmpty) continue;
+
+      updatedSeries.add(
         _ParticipantSeries(
           participant: participants[participantIndex],
           spots: spots,
@@ -76,8 +114,8 @@ class MetricChart extends ConsumerWidget {
       );
     }
 
-    if (series.isEmpty) {
-      return const Center(child: Text('No data in selected range'));
+    if (updatedSeries.isEmpty) {
+      return const Center(child: Text('No data points yet'));
     }
 
     return Padding(
@@ -88,7 +126,43 @@ class MetricChart extends ConsumerWidget {
             child: LineChart(
               LineChartData(
                 borderData: FlBorderData(show: false),
-                lineBarsData: series
+                gridData: FlGridData(
+                  drawHorizontalLine: true,
+                  drawVerticalLine: false,
+                ),
+                titlesData: FlTitlesData(
+                  leftTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: true, reservedSize: 36),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      interval: 1,
+                      getTitlesWidget: (value, meta) {
+                        final index = value.toInt();
+                        if (index < 0 || index >= orderedDates.length) {
+                          return const SizedBox.shrink();
+                        }
+                        final dateLabel = DateFormat('MM/dd')
+                            .format(orderedDates[index]);
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            dateLabel,
+                            style: const TextStyle(fontSize: 10),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                lineBarsData: updatedSeries
                     .map(
                       (entry) => LineChartBarData(
                         spots: entry.spots,
@@ -106,7 +180,7 @@ class MetricChart extends ConsumerWidget {
             Wrap(
               spacing: 12,
               runSpacing: 8,
-              children: series
+              children: updatedSeries
                   .map(
                     (entry) => Row(
                       mainAxisSize: MainAxisSize.min,

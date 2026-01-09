@@ -3,10 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/di/providers.dart';
 import '../../widgets/app_header/app_header.dart';
-import 'state/charts_state.dart';
-import 'widgets/charts_app_bar.dart';
-import 'widgets/day_selector.dart';
-import 'widgets/metric_legend.dart';
 import 'widgets/empty_metrics_view.dart';
 import 'widgets/metric_chart.dart';
 import 'dialogs/health_parameter_sheet.dart';
@@ -14,18 +10,11 @@ import '../../widgets/participant_filter/participant_filter.dart';
 import 'models/chart_parameter.dart';
 import '../../../data/datasources/local/app_database.dart';
 
-class ChartsPage extends ConsumerStatefulWidget {
+class ChartsPage extends ConsumerWidget {
   const ChartsPage({super.key});
 
   @override
-  ConsumerState<ChartsPage> createState() => _ChartsPageState();
-}
-
-class _ChartsPageState extends ConsumerState<ChartsPage> {
-  final ChartsState _state = ChartsState();
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final selectedParticipants = ref.watch(selectedParticipantsProvider);
 
     if (selectedParticipants.isEmpty) {
@@ -56,16 +45,9 @@ class _ChartsPageState extends ConsumerState<ChartsPage> {
       body: Column(
         children: [
           const ParticipantFilter(),
-          ChartsAppBar(
-            selectedDays: _state.selectedDays,
-            onDaysChanged: (days) {
-              setState(() => _state.selectedDays = days);
-            },
-          ),
           Expanded(
             child: _MetricsBody(
               selectedParticipants: selectedParticipants.toList(),
-              state: _state,
             ),
           ),
         ],
@@ -80,11 +62,9 @@ class _ChartsPageState extends ConsumerState<ChartsPage> {
 
 class _MetricsBody extends ConsumerStatefulWidget {
   final List<int> selectedParticipants;
-  final ChartsState state;
 
   const _MetricsBody({
     required this.selectedParticipants,
-    required this.state,
   });
 
   @override
@@ -95,7 +75,6 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
   @override
   Widget build(BuildContext context) {
     final selectedParticipants = widget.selectedParticipants;
-    final state = widget.state;
     final participantsAsync = ref.watch(participantsProvider);
     final metricsAsyncList = selectedParticipants
         .map<AsyncValue<List<Metric>>>(
@@ -135,41 +114,53 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
           );
         }
 
-        if (state.selectedMetric == null ||
-            !parameters.contains(state.selectedMetric)) {
-          state.selectedMetric = parameters.first;
-        }
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          itemCount: parameters.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            final parameter = parameters[index];
+            final selectedMetrics = metrics
+                .where(
+                  (metric) =>
+                      metric.name.toLowerCase() ==
+                          parameter.name.toLowerCase() &&
+                      metric.unit.toLowerCase() ==
+                          parameter.unit.toLowerCase(),
+                )
+                .toList();
 
-        final selectedParameter = state.selectedMetric!;
-        final selectedMetrics = metrics
-            .where(
-              (metric) =>
-                  metric.name.toLowerCase() ==
-                      selectedParameter.name.toLowerCase() &&
-                  metric.unit.toLowerCase() ==
-                      selectedParameter.unit.toLowerCase(),
-            )
-            .toList();
-
-        return Column(
-          children: [
-            DaySelector(days: state.selectedDays),
-            Expanded(
-              child: MetricChart(
-                metric: selectedParameter,
-                metrics: selectedMetrics,
-                participants: selectedParticipantDetails,
-                days: state.selectedDays,
+            return Card(
+              elevation: 0,
+              color: Theme.of(context).cardColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${parameter.name} (${parameter.unit})',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 240,
+                      child: MetricChart(
+                        metrics: selectedMetrics,
+                        participants: selectedParticipantDetails,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            MetricLegend(
-              metrics: parameters,
-              selectedMetric: selectedParameter,
-              onSelected: (metric) {
-                setState(() => state.selectedMetric = metric);
-              },
-            ),
-          ],
+          },
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
