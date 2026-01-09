@@ -1,7 +1,6 @@
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/di/providers.dart';
 import '../../../../data/datasources/local/app_database.dart';
@@ -28,22 +27,21 @@ class _HealthParameterSheet extends ConsumerStatefulWidget {
 
 class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
   final _customNameController = TextEditingController();
-  final List<TextEditingController> _valueControllers = [
-    TextEditingController(),
+  final List<_ValueEntry> _valueEntries = [
+    _ValueEntry(controller: TextEditingController(), date: DateTime.now()),
   ];
   final _unitController = TextEditingController();
 
   _ParameterMode _mode = _ParameterMode.custom;
   Participant? _selectedParticipant;
   ChartParameter? _selectedParameter;
-  DateTime _selectedDate = DateTime.now();
   bool _isSaving = false;
 
   @override
   void dispose() {
     _customNameController.dispose();
-    for (final controller in _valueControllers) {
-      controller.dispose();
+    for (final entry in _valueEntries) {
+      entry.controller.dispose();
     }
     _unitController.dispose();
     super.dispose();
@@ -86,18 +84,6 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
     }
   }
 
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null) {
-      setState(() => _selectedDate = picked);
-    }
-  }
-
   Future<void> _save() async {
     final participant = _selectedParticipant;
     if (participant == null) {
@@ -107,8 +93,8 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
       return;
     }
 
-    final values = _valueControllers
-        .map((controller) => controller.text.trim())
+    final values = _valueEntries
+        .map((entry) => entry.controller.text.trim())
         .where((value) => value.isNotEmpty)
         .toList();
     if (values.isEmpty) {
@@ -172,12 +158,14 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
             );
       }
 
-      for (final value in parsedValues.whereType<double>()) {
+      for (final entry in _valueEntries) {
+        final parsedValue = double.tryParse(entry.controller.text.trim());
+        if (parsedValue == null) continue;
         await db.addDataPoint(
           MetricDataPointsCompanion(
             metricId: drift.Value(metricId),
-            value: drift.Value(value),
-            recordedAt: drift.Value(_selectedDate),
+            value: drift.Value(parsedValue),
+            recordedAt: drift.Value(entry.date),
           ),
         );
       }
@@ -367,16 +355,16 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                         title: 'Value',
                         child: Column(
                           children: [
-                            ..._valueControllers.asMap().entries.map((entry) {
+                            ..._valueEntries.asMap().entries.map((entry) {
                               final index = entry.key;
-                              final controller = entry.value;
+                              final valueEntry = entry.value;
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 12),
                                 child: Row(
                                   children: [
                                     Expanded(
                                       child: TextField(
-                                        controller: controller,
+                                        controller: valueEntry.controller,
                                         keyboardType: TextInputType.number,
                                         decoration: InputDecoration(
                                           hintText: valueHint,
@@ -386,17 +374,38 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                                         ),
                                       ),
                                     ),
-                                    if (_valueControllers.length > 1)
+                                    IconButton(
+                                      tooltip: 'Select date',
+                                      icon: const Icon(
+                                        Icons.calendar_today,
+                                        size: 18,
+                                      ),
+                                      onPressed: () async {
+                                        final picked = await showDatePicker(
+                                          context: context,
+                                          initialDate: valueEntry.date,
+                                          firstDate: DateTime(2020),
+                                          lastDate: DateTime.now(),
+                                        );
+                                        if (picked != null) {
+                                          setState(() {
+                                            _valueEntries[index] =
+                                                valueEntry.copyWith(
+                                              date: picked,
+                                            );
+                                          });
+                                        }
+                                      },
+                                    ),
+                                    if (_valueEntries.length > 1)
                                       IconButton(
                                         tooltip: 'Remove value',
                                         icon: const Icon(Icons.close, size: 18),
                                         onPressed: () {
                                           setState(() {
                                             final removed =
-                                                _valueControllers.removeAt(
-                                              index,
-                                            );
-                                            removed.dispose();
+                                                _valueEntries.removeAt(index);
+                                            removed.controller.dispose();
                                           });
                                         },
                                       ),
@@ -409,8 +418,11 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                               child: TextButton.icon(
                                 onPressed: () {
                                   setState(() {
-                                    _valueControllers.add(
-                                      TextEditingController(),
+                                    _valueEntries.add(
+                                      _ValueEntry(
+                                        controller: TextEditingController(),
+                                        date: DateTime.now(),
+                                      ),
                                     );
                                   });
                                 },
@@ -431,28 +443,6 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                             ),
                           ),
                         ),
-                      _Section(
-                        title: 'Date',
-                        child: InkWell(
-                          onTap: _selectDate,
-                          child: InputDecorator(
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    DateFormat('dd/MM/yyyy')
-                                        .format(_selectedDate),
-                                  ),
-                                ),
-                                const Icon(Icons.calendar_today, size: 18),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -509,6 +499,23 @@ class _Section extends StatelessWidget {
           child,
         ],
       ),
+    );
+  }
+}
+
+class _ValueEntry {
+  final TextEditingController controller;
+  final DateTime date;
+
+  const _ValueEntry({required this.controller, required this.date});
+
+  _ValueEntry copyWith({
+    TextEditingController? controller,
+    DateTime? date,
+  }) {
+    return _ValueEntry(
+      controller: controller ?? this.controller,
+      date: date ?? this.date,
     );
   }
 }

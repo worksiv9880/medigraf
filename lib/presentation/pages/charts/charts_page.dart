@@ -53,9 +53,11 @@ class ChartsPage extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => showHealthParameterSheet(context, ref),
-        child: const Icon(Icons.add),
+      floatingActionButton: SafeArea(
+        child: FloatingActionButton(
+          onPressed: () => showHealthParameterSheet(context, ref),
+          child: const Icon(Icons.add),
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
