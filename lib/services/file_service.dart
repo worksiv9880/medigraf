@@ -3,8 +3,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
@@ -205,39 +203,21 @@ class FileService {
     if (scannedPaths.isEmpty) return null;
 
     try {
-      final pdfDoc = pw.Document();
-      for (final path in scannedPaths) {
-        final bytes = await File(path).readAsBytes();
-        final image = pw.MemoryImage(bytes);
-        pdfDoc.addPage(
-          pw.Page(
-            pageFormat: PdfPageFormat.a4,
-            build: (context) => pw.Center(
-              child: pw.FittedBox(
-                fit: pw.BoxFit.contain,
-                child: pw.Image(image),
-              ),
-            ),
-          ),
-        );
-      }
-
-      final tempDir = await getTemporaryDirectory();
-      final tempPath = p.join(tempDir.path, '${_uuid.v4()}.pdf');
-      final tempFile = File(tempPath);
-      await tempFile.writeAsBytes(await pdfDoc.save());
-
+      final firstPath = scannedPaths.first;
+      final extension = p.extension(firstPath).isNotEmpty
+          ? p.extension(firstPath)
+          : '.jpg';
       return _saveFile(
-        tempFile.path,
+        firstPath,
         FileSource.scanner,
-        mimeType: 'application/pdf',
-        previewSourcePath: scannedPaths.first,
+        mimeType: _inferMimeType(extension.replaceAll('.', '')) ?? 'image/jpeg',
+        previewIsTarget: true,
         pageCount: scannedPaths.length,
         createdAt: DateTime.now(),
-        targetExtension: '.pdf',
+        targetExtension: extension,
       );
     } catch (e) {
-      print('Error creating PDF: $e');
+      print('Error saving scanned document: $e');
       return null;
     }
   }

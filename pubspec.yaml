@@ -27,7 +27,6 @@ dependencies:
   
   # Charts - Latest stable
   fl_chart: ^1.1.1
-  pdf: ^3.11.0
   
   # UI
   cupertino_icons: ^1.0.8
