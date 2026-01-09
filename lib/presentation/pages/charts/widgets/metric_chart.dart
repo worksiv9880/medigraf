@@ -129,9 +129,9 @@ class MetricChart extends ConsumerWidget {
     final minValue = minY ?? 0;
     final maxValue = maxY ?? minValue + 1;
     final range = (maxValue - minValue).abs();
-    final yInterval = range == 0 ? 1 : range / 4;
+    final yInterval = (range == 0 ? 1 : range / 4).toDouble();
     final xInterval = orderedDates.length <= 6
-        ? 1
+        ? 1.0
         : (orderedDates.length / 6).ceilToDouble();
 
     return Padding(
