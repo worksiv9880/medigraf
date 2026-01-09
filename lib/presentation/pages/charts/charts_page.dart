@@ -9,6 +9,7 @@ import 'dialogs/health_parameter_sheet.dart';
 import '../../widgets/participant_filter/participant_filter.dart';
 import 'models/chart_parameter.dart';
 import '../../../data/datasources/local/app_database.dart';
+import 'utils/chart_colors.dart';
 
 class ChartsPage extends ConsumerWidget {
   const ChartsPage({super.key});
@@ -72,6 +73,104 @@ class _MetricsBody extends ConsumerStatefulWidget {
 }
 
 class _MetricsBodyState extends ConsumerState<_MetricsBody> {
+  Future<void> _confirmDeleteChart({
+    required BuildContext context,
+    required List<Metric> metrics,
+  }) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete chart'),
+        content: const Text(
+          'Are you sure you want to delete this chart? '
+          'All information will be permanently deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete != true) return;
+
+    final db = ref.read(databaseProvider);
+    for (final metric in metrics) {
+      await db.deleteMetric(metric.id);
+    }
+  }
+
+  Future<void> _deleteParticipantMetric({
+    required BuildContext context,
+    required Metric metric,
+    required Participant participant,
+  }) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete metric'),
+        content: Text(
+          'Delete ${metric.name} for ${participant.emoji} ${participant.name}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete != true) return;
+
+    final db = ref.read(databaseProvider);
+    await db.deleteMetric(metric.id);
+  }
+
+  Widget _buildParticipantMetricRow({
+    required Participant participant,
+    required Metric metric,
+    required int colorIndex,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: chartColors[colorIndex % chartColors.length],
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '${participant.emoji} ${participant.name}',
+          style: const TextStyle(fontSize: 12),
+        ),
+        IconButton(
+          tooltip: 'Delete metric',
+          icon: const Icon(Icons.delete_outline, size: 18),
+          onPressed: () => _deleteParticipantMetric(
+            context: context,
+            metric: metric,
+            participant: participant,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedParticipants = widget.selectedParticipants;
@@ -129,6 +228,20 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
                           parameter.unit.toLowerCase(),
                 )
                 .toList();
+            final participantMetricRows = selectedMetrics
+                .map((metric) {
+                  final participantIndex = selectedParticipantDetails.indexWhere(
+                    (participant) => participant.id == metric.participantId,
+                  );
+                  if (participantIndex == -1) return null;
+                  return _buildParticipantMetricRow(
+                    participant: selectedParticipantDetails[participantIndex],
+                    metric: metric,
+                    colorIndex: participantIndex,
+                  );
+                })
+                .whereType<Widget>()
+                .toList();
 
             return Card(
               elevation: 0,
@@ -141,12 +254,26 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${parameter.name} (${parameter.unit})',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${parameter.name} (${parameter.unit})',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Delete chart',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => _confirmDeleteChart(
+                            context: context,
+                            metrics: selectedMetrics,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -156,10 +283,18 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
                         participants: selectedParticipantDetails,
                       ),
                     ),
+                    if (participantMetricRows.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 8,
+                        children: participantMetricRows,
+                      ),
+                    ],
                   ],
                 ),
               ),
-            ),
+            );
           },
         );
       },

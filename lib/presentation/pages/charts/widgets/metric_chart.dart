@@ -175,35 +175,6 @@ class MetricChart extends ConsumerWidget {
               ),
             ),
           ),
-          if (participants.length > 1) ...[
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: updatedSeries
-                  .map(
-                    (entry) => Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: entry.color,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${entry.participant.emoji} ${entry.participant.name}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
         ],
       ),
     );
