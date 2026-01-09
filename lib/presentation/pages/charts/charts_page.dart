@@ -106,35 +106,70 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
     }
   }
 
-  Future<void> _deleteParticipantMetric({
+  Future<void> _showMetricPointsDialog({
     required BuildContext context,
     required Metric metric,
     required Participant participant,
   }) async {
-    final shouldDelete = await showDialog<bool>(
+    await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete metric'),
-        content: Text(
-          'Delete ${metric.name} for ${participant.emoji} ${participant.name}?',
+        title: Text(
+          '${participant.emoji} ${participant.name} - ${metric.name}',
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Consumer(
+            builder: (context, ref, _) {
+              final pointsAsync =
+                  ref.watch(metricDataPointsProvider(metric.id));
+              return pointsAsync.when(
+                data: (points) {
+                  if (points.isEmpty) {
+                    return const Text('No values recorded yet.');
+                  }
+
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: points.length,
+                    separatorBuilder: (_, __) => const Divider(),
+                    itemBuilder: (context, index) {
+                      final point = points[index];
+                      return ListTile(
+                        title: Text(point.value.toStringAsFixed(1)),
+                        subtitle: Text(
+                          '${point.recordedAt.day.toString().padLeft(2, '0')}/'
+                          '${point.recordedAt.month.toString().padLeft(2, '0')}/'
+                          '${point.recordedAt.year}',
+                        ),
+                        trailing: IconButton(
+                          tooltip: 'Delete value',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () async {
+                            await ref
+                                .read(databaseProvider)
+                                .deleteDataPoint(point.id);
+                          },
+                        ),
+                      );
+                    },
+                  );
+                },
+                loading: () =>
+                    const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Text('Error: $e'),
+              );
+            },
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Delete'),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
           ),
         ],
       ),
     );
-
-    if (shouldDelete != true) return;
-
-    final db = ref.read(databaseProvider);
-    await db.deleteMetric(metric.id);
   }
 
   Widget _buildParticipantMetricRow({
@@ -161,7 +196,7 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
         IconButton(
           tooltip: 'Delete metric',
           icon: const Icon(Icons.delete_outline, size: 18),
-          onPressed: () => _deleteParticipantMetric(
+          onPressed: () => _showMetricPointsDialog(
             context: context,
             metric: metric,
             participant: participant,
