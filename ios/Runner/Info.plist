@@ -45,6 +45,10 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Нужно разрешение на камеру для сканирования документов.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Нужно разрешение на доступ к фото, чтобы сохранять отсканированные документы.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Нужно разрешение на добавление в фото для сохранения сканов.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 </dict>
