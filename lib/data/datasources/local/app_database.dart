@@ -112,6 +112,18 @@ class AppDatabase extends _$AppDatabase {
       (select(metrics)..where((t) => t.participantId.equals(participantId)))
           .get();
 
+  Future<Metric?> getMetricForParticipantByName(
+    int participantId,
+    String name,
+    String unit,
+  ) =>
+      (select(metrics)
+            ..where((t) =>
+                t.participantId.equals(participantId) &
+                t.name.equals(name) &
+                t.unit.equals(unit)))
+          .getSingleOrNull();
+
   Future<int> addMetric(MetricsCompanion metric) =>
       into(metrics).insert(metric);
   Future<bool> updateMetric(Metric metric) => update(metrics).replace(metric);
