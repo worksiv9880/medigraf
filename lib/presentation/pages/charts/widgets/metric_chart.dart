@@ -149,7 +149,7 @@ class MetricChart extends ConsumerWidget {
                         if (index < 0 || index >= orderedDates.length) {
                           return const SizedBox.shrink();
                         }
-                        final dateLabel = DateFormat('MM/dd')
+                        final dateLabel = DateFormat('dd/MM/yyyy')
                             .format(orderedDates[index]);
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
