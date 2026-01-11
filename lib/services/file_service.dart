@@ -77,6 +77,28 @@ class FileService {
     return _pickSingleFile();
   }
 
+  /// Pick a photo from gallery
+  Future<FileMetadata?> pickPhotoFromGallery() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (image == null) return null;
+
+      return await _saveFile(
+        image.path,
+        FileSource.gallery,
+      );
+    } catch (e) {
+      print('Error picking photo from gallery: $e');
+      return null;
+    }
+  }
+
   /// Pick multiple images from gallery
   Future<List<FileMetadata>> pickMultipleFromGallery() async {
     try {

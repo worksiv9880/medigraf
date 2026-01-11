@@ -88,6 +88,16 @@ class _FileUploadFormState extends State<FileUploadForm> {
     });
   }
 
+  Future<void> _pickPhoto() async {
+    final file = await widget.fileService.pickPhotoFromGallery();
+    if (file == null) return;
+
+    setState(() {
+      _selectedFile = file;
+      _selectedDate = file.createdAt;
+    });
+  }
+
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final initialDate =
@@ -216,6 +226,26 @@ class _FileUploadFormState extends State<FileUploadForm> {
             isDisabled: _isSubmitting,
             fileName: _selectedFile?.fileName,
             onTap: _pickFile,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _isSubmitting ? null : _pickFile,
+                  icon: const Icon(Icons.folder_open),
+                  label: const Text('Choose File'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _isSubmitting ? null : _pickPhoto,
+                  icon: const Icon(Icons.photo_library),
+                  label: const Text('Import Photo'),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           _SectionLabel('Document Title'),
