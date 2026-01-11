@@ -79,17 +79,40 @@ class _FileUploadFormState extends State<FileUploadForm> {
   }
 
   Future<void> _pickFile() async {
-    final file = await widget.fileService.pickFromGallery();
-    if (file == null) return;
+    final option = await showModalBottomSheet<_FilePickOption>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.of(context).pop(_FilePickOption.photo),
+            ),
+            ListTile(
+              leading: const Icon(Icons.insert_drive_file),
+              title: const Text('Choose file'),
+              onTap: () => Navigator.of(context).pop(_FilePickOption.file),
+            ),
+          ],
+        ),
+      ),
+    );
 
-    setState(() {
-      _selectedFile = file;
-      _selectedDate = file.createdAt;
-    });
-  }
+    FileMetadata? file;
+    switch (option) {
+      case _FilePickOption.photo:
+        file = await widget.fileService.pickPhotoFromGallery();
+        break;
+      case _FilePickOption.file:
+        file = await widget.fileService.pickFromGallery();
+        break;
+      case null:
+        return;
+    }
 
-  Future<void> _pickPhoto() async {
-    final file = await widget.fileService.pickPhotoFromGallery();
     if (file == null) return;
 
     setState(() {
@@ -227,26 +250,6 @@ class _FileUploadFormState extends State<FileUploadForm> {
             fileName: _selectedFile?.fileName,
             onTap: _pickFile,
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _isSubmitting ? null : _pickFile,
-                  icon: const Icon(Icons.folder_open),
-                  label: const Text('Choose File'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _isSubmitting ? null : _pickPhoto,
-                  icon: const Icon(Icons.photo_library),
-                  label: const Text('Import Photo'),
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 16),
           _SectionLabel('Document Title'),
           const SizedBox(height: 8),
@@ -378,6 +381,11 @@ class _FileUploadFormState extends State<FileUploadForm> {
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
   }
+}
+
+enum _FilePickOption {
+  photo,
+  file,
 }
 
 class _SectionLabel extends StatelessWidget {
