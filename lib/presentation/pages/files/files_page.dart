@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../data/datasources/local/app_database.dart';
-import '../../../services/db_file_service.dart';
-import '../../../services/file_service.dart';
-import 'file_card.dart';
-import 'files_header.dart';
-import 'upload_file_dialog.dart';
-import '../../widgets/app_header/app_header.dart';
-import '../../widgets/participant_filter/participant_filter.dart';
-import '../../../core/di/providers.dart';
+
+import 'package:medigraf/core/di/providers.dart';
+import 'package:medigraf/data/datasources/local/app_database.dart';
+import 'package:medigraf/services/db_file_service.dart';
+import 'package:medigraf/services/file_service.dart';
+
+import 'package:medigraf/presentation/widgets/app_header/app_header.dart';
+import 'package:medigraf/presentation/widgets/participant_filter/participant_filter.dart';
+
+import 'dialogs/upload_file_dialog.dart';
+import 'widgets/file_card.dart';
+import 'widgets/files_header.dart';
 
 class FilesPage extends ConsumerStatefulWidget {
   const FilesPage({super.key});

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../data/datasources/local/app_database.dart';
+
+import 'package:medigraf/data/datasources/local/app_database.dart';
 
 class FileCard extends StatelessWidget {
   final DbFile file;

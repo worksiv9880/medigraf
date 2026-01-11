@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../data/datasources/local/app_database.dart';
-import '../../../../services/file_service.dart';
+import 'package:medigraf/data/datasources/local/app_database.dart';
+import 'package:medigraf/services/file_service.dart';
 
 class FileUploadData {
   final int participantId;
@@ -90,7 +90,8 @@ class _FileUploadFormState extends State<FileUploadForm> {
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
-    final initialDate = _selectedDate.isBefore(DateTime(1900)) ? now : _selectedDate;
+    final initialDate =
+        _selectedDate.isBefore(DateTime(1900)) ? now : _selectedDate;
 
     final picked = await showDatePicker(
       context: context,
@@ -109,13 +110,17 @@ class _FileUploadFormState extends State<FileUploadForm> {
   Future<void> _submit() async {
     if (_isSubmitting) return;
 
-    final participantId = widget.participants.any((p) => p.id == _selectedParticipantId)
-        ? _selectedParticipantId
-        : (widget.participants.isNotEmpty ? widget.participants.first.id : null);
+    final participantId =
+        widget.participants.any((p) => p.id == _selectedParticipantId)
+            ? _selectedParticipantId
+            : (widget.participants.isNotEmpty
+                ? widget.participants.first.id
+                : null);
 
     if (participantId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Добавьте участника, чтобы загрузить файл')),
+        const SnackBar(
+            content: Text('Добавьте участника, чтобы загрузить файл')),
       );
       return;
     }
@@ -137,7 +142,9 @@ class _FileUploadFormState extends State<FileUploadForm> {
       final resolvedType = widget.documentTypes.contains(_selectedType)
           ? _selectedType!
           : (_selectedType ??
-              (widget.documentTypes.isNotEmpty ? widget.documentTypes.first : widget.initialType));
+              (widget.documentTypes.isNotEmpty
+                  ? widget.documentTypes.first
+                  : widget.initialType));
 
       await widget.onSubmit(
         FileUploadData(
@@ -163,9 +170,12 @@ class _FileUploadFormState extends State<FileUploadForm> {
 
   @override
   Widget build(BuildContext context) {
-    final participantId = widget.participants.any((p) => p.id == _selectedParticipantId)
-        ? _selectedParticipantId
-        : (widget.participants.isNotEmpty ? widget.participants.first.id : null);
+    final participantId =
+        widget.participants.any((p) => p.id == _selectedParticipantId)
+            ? _selectedParticipantId
+            : (widget.participants.isNotEmpty
+                ? widget.participants.first.id
+                : null);
     final selectedType = widget.documentTypes.contains(_selectedType)
         ? _selectedType
         : (widget.documentTypes.isNotEmpty ? widget.documentTypes.first : null);
@@ -188,7 +198,9 @@ class _FileUploadFormState extends State<FileUploadForm> {
                   ),
                 )
                 .toList(),
-            onChanged: _isSubmitting ? null : (value) => setState(() => _selectedParticipantId = value),
+            onChanged: _isSubmitting
+                ? null
+                : (value) => setState(() => _selectedParticipantId = value),
             decoration: _inputDecoration(),
             validator: (_) {
               if (widget.participants.isEmpty) {
@@ -234,7 +246,9 @@ class _FileUploadFormState extends State<FileUploadForm> {
                   ),
                 )
                 .toList(),
-            onChanged: _isSubmitting ? null : (value) => setState(() => _selectedType = value),
+            onChanged: _isSubmitting
+                ? null
+                : (value) => setState(() => _selectedType = value),
             decoration: _inputDecoration(),
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -272,7 +286,9 @@ class _FileUploadFormState extends State<FileUploadForm> {
                   const SizedBox(height: 6),
                   Text(
                     state.errorText!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontSize: 12),
                   ),
                 ],
               ],
@@ -299,7 +315,8 @@ class _FileUploadFormState extends State<FileUploadForm> {
                       : const Icon(Icons.upload),
                   label: Text(_isSubmitting ? 'Uploading...' : 'Upload'),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 14),
                   ),
                 ),
               ],
@@ -381,10 +398,10 @@ class _FilePickerField extends StatelessWidget {
                 child: Text(
                   fileName ?? 'Choose File',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                        color: fileName == null
-                            ? Colors.grey.shade600
-                            : theme.colorScheme.onSurface,
-                      ),
+                    color: fileName == null
+                        ? Colors.grey.shade600
+                        : theme.colorScheme.onSurface,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

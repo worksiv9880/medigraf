@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/di/providers.dart';
-import '../../../services/db_file_service.dart';
-import 'widgets/file_upload_form.dart';
+
+import 'package:medigraf/core/di/providers.dart';
+import 'package:medigraf/services/db_file_service.dart';
+
+import '../widgets/file_upload_form.dart';
 
 class UploadFileDialog extends ConsumerWidget {
   final DbFileService dbFileService;
@@ -29,9 +31,10 @@ class UploadFileDialog extends ConsumerWidget {
                   children: [
                     Text(
                       'Upload Document',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -57,9 +60,10 @@ class UploadFileDialog extends ConsumerWidget {
                   children: [
                     Text(
                       'Upload Document',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                     ),
                     const SizedBox(height: 8),
                     Text(
