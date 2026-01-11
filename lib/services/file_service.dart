@@ -123,6 +123,34 @@ class FileService {
     }
   }
 
+  /// Pick multiple files
+  Future<List<FileMetadata>> pickMultipleFiles() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: _documentExtensions,
+      );
+
+      if (result == null || result.files.isEmpty) return [];
+
+      final List<FileMetadata> files = [];
+      for (final picked in result.files) {
+        final path = picked.path;
+        if (path == null) continue;
+        final metadata = await _saveFile(path, FileSource.filePicker);
+        if (metadata != null) {
+          files.add(metadata);
+        }
+      }
+
+      return files;
+    } catch (e) {
+      print('Error picking multiple files: $e');
+      return [];
+    }
+  }
+
   /// Scan document using camera
   Future<List<FileMetadata>> scanDocument() async {
     try {

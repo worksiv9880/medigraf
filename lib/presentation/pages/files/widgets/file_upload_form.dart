@@ -6,14 +6,14 @@ class FileUploadData {
   final int participantId;
   final String title;
   final String type;
-  final FileMetadata file;
+  final List<FileMetadata> files;
   final DateTime fileDate;
 
   const FileUploadData({
     required this.participantId,
     required this.title,
     required this.type,
-    required this.file,
+    required this.files,
     required this.fileDate,
   });
 }
@@ -59,7 +59,7 @@ class _FileUploadFormState extends State<FileUploadForm> {
 
   String? _selectedType;
   int? _selectedParticipantId;
-  FileMetadata? _selectedFile;
+  List<FileMetadata> _selectedFiles = [];
   late DateTime _selectedDate;
   bool _isSubmitting = false;
 
@@ -101,24 +101,23 @@ class _FileUploadFormState extends State<FileUploadForm> {
       ),
     );
 
-    FileMetadata? file;
+    List<FileMetadata> files = [];
     switch (option) {
       case _FilePickOption.photo:
-        file = await widget.fileService.pickPhotoFromGallery();
+        files = await widget.fileService.pickMultipleFromGallery();
         break;
       case _FilePickOption.file:
-        file = await widget.fileService.pickFromGallery();
+        files = await widget.fileService.pickMultipleFiles();
         break;
       case null:
         return;
     }
 
-    if (file == null) return;
-    final selectedFile = file;
+    if (files.isEmpty) return;
 
     setState(() {
-      _selectedFile = selectedFile;
-      _selectedDate = selectedFile.createdAt;
+      _selectedFiles = files;
+      _selectedDate = files.first.createdAt;
     });
   }
 
@@ -159,7 +158,7 @@ class _FileUploadFormState extends State<FileUploadForm> {
       return;
     }
 
-    if (_selectedFile == null) {
+    if (_selectedFiles.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Выберите файл для загрузки')),
       );
@@ -185,7 +184,7 @@ class _FileUploadFormState extends State<FileUploadForm> {
           participantId: participantId,
           title: _titleController.text.trim(),
           type: resolvedType,
-          file: _selectedFile!,
+          files: _selectedFiles,
           fileDate: _selectedDate,
         ),
       );
@@ -213,6 +212,12 @@ class _FileUploadFormState extends State<FileUploadForm> {
     final selectedType = widget.documentTypes.contains(_selectedType)
         ? _selectedType
         : (widget.documentTypes.isNotEmpty ? widget.documentTypes.first : null);
+
+    final fileLabel = _selectedFiles.isEmpty
+        ? 'Choose File'
+        : (_selectedFiles.length == 1
+            ? _selectedFiles.first.fileName
+            : 'Selected ${_selectedFiles.length} files');
 
     return Form(
       key: _formKey,
@@ -248,7 +253,8 @@ class _FileUploadFormState extends State<FileUploadForm> {
           const SizedBox(height: 8),
           _FilePickerField(
             isDisabled: _isSubmitting,
-            fileName: _selectedFile?.fileName,
+            label: fileLabel,
+            hasSelection: _selectedFiles.isNotEmpty,
             onTap: _pickFile,
           ),
           const SizedBox(height: 16),
@@ -407,12 +413,14 @@ class _SectionLabel extends StatelessWidget {
 
 class _FilePickerField extends StatelessWidget {
   final VoidCallback onTap;
-  final String? fileName;
+  final String label;
+  final bool hasSelection;
   final bool isDisabled;
 
   const _FilePickerField({
     required this.onTap,
-    required this.fileName,
+    required this.label,
+    required this.hasSelection,
     required this.isDisabled,
   });
 
@@ -435,11 +443,11 @@ class _FilePickerField extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  fileName ?? 'Choose File',
+                  label,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: fileName == null
-                        ? Colors.grey.shade600
-                        : theme.colorScheme.onSurface,
+                    color: hasSelection
+                        ? theme.colorScheme.onSurface
+                        : Colors.grey.shade600,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
