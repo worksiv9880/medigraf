@@ -114,10 +114,11 @@ class _FileUploadFormState extends State<FileUploadForm> {
     }
 
     if (file == null) return;
+    final selectedFile = file;
 
     setState(() {
-      _selectedFile = file;
-      _selectedDate = file.createdAt;
+      _selectedFile = selectedFile;
+      _selectedDate = selectedFile.createdAt;
     });
   }
 
