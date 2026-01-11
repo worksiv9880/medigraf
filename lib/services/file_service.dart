@@ -77,6 +77,28 @@ class FileService {
     return _pickSingleFile();
   }
 
+  /// Pick a photo from gallery
+  Future<FileMetadata?> pickPhotoFromGallery() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (image == null) return null;
+
+      return await _saveFile(
+        image.path,
+        FileSource.gallery,
+      );
+    } catch (e) {
+      print('Error picking photo from gallery: $e');
+      return null;
+    }
+  }
+
   /// Pick multiple images from gallery
   Future<List<FileMetadata>> pickMultipleFromGallery() async {
     try {
@@ -97,6 +119,34 @@ class FileService {
       return files;
     } catch (e) {
       print('Error picking multiple images: $e');
+      return [];
+    }
+  }
+
+  /// Pick multiple files
+  Future<List<FileMetadata>> pickMultipleFiles() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: _documentExtensions,
+      );
+
+      if (result == null || result.files.isEmpty) return [];
+
+      final List<FileMetadata> files = [];
+      for (final picked in result.files) {
+        final path = picked.path;
+        if (path == null) continue;
+        final metadata = await _saveFile(path, FileSource.filePicker);
+        if (metadata != null) {
+          files.add(metadata);
+        }
+      }
+
+      return files;
+    } catch (e) {
+      print('Error picking multiple files: $e');
       return [];
     }
   }

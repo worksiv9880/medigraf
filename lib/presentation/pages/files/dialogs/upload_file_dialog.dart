@@ -79,13 +79,15 @@ class UploadFileDialog extends ConsumerWidget {
                       fileService: dbFileService.fileService,
                       onCancel: () => Navigator.of(context).pop(false),
                       onSubmit: (data) async {
-                        await dbFileService.addFileWithMetadata(
-                          participantId: data.participantId,
-                          title: data.title,
-                          type: data.type,
-                          file: data.file,
-                          fileDate: data.fileDate,
-                        );
+                        for (final file in data.files) {
+                          await dbFileService.addFileWithMetadata(
+                            participantId: data.participantId,
+                            title: data.title,
+                            type: data.type,
+                            file: file,
+                            fileDate: data.fileDate,
+                          );
+                        }
 
                         if (context.mounted) {
                           Navigator.of(context).pop(true);
