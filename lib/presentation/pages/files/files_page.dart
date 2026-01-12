@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:medigraf/core/di/providers.dart';
 import 'package:medigraf/data/datasources/local/app_database.dart';
@@ -68,6 +69,96 @@ class _FilesPageState extends ConsumerState<FilesPage> {
     );
 
     if (!mounted || uploaded != true) return;
+
+    setState(_loadFiles);
+  }
+
+  Future<void> _shareFile(DbFile file) async {
+    try {
+      await Share.shareXFiles(
+        [XFile(file.filePath)],
+        text: file.title,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Не удалось поделиться файлом: $error')),
+      );
+    }
+  }
+
+  Future<void> _renameFile(DbFile file) async {
+    final controller = TextEditingController(text: file.title);
+    final updatedTitle = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Rename document'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Document title',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(
+              controller.text.trim(),
+            ),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || updatedTitle == null || updatedTitle.isEmpty) {
+      return;
+    }
+
+    final success = await _dbFileService.renameFile(
+      id: file.id,
+      title: updatedTitle,
+    );
+
+    if (!mounted) return;
+
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Не удалось переименовать файл')),
+      );
+      return;
+    }
+
+    setState(_loadFiles);
+  }
+
+  Future<void> _deleteFile(DbFile file) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete document'),
+        content: const Text('Удалить этот документ? Это действие нельзя отменить.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || confirmed != true) return;
+
+    await _db.deleteFileById(file.id);
+
+    if (!mounted) return;
 
     setState(_loadFiles);
   }
@@ -155,6 +246,9 @@ class _FilesPageState extends ConsumerState<FilesPage> {
                       return FileCard(
                         file: file,
                         participant: participantMap[file.participantId],
+                        onShare: () => _shareFile(file),
+                        onRename: () => _renameFile(file),
+                        onDelete: () => _deleteFile(file),
                       );
                     },
                   );

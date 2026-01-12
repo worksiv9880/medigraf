@@ -27,13 +27,17 @@ class FileUploadForm extends StatefulWidget {
     this.onCancel,
     this.initialParticipantId,
     this.initialTitle,
-    this.initialType = 'GENERAL',
+    this.initialType = 'OTHER',
     this.initialFileDate,
     this.documentTypes = const [
-      'GENERAL',
-      'PRESCRIPTION',
-      'REFERRAL',
-      'ANALYSIS',
+      'LAB_RESULTS',
+      'IMAGING',
+      'PRESCRIPTIONS',
+      'VACCINATIONS',
+      'REFERRALS',
+      'VISIT_NOTES',
+      'ADMINISTRATIVE',
+      'OTHER',
     ],
     this.showActions = true,
   });
@@ -380,9 +384,18 @@ class _FileUploadFormState extends State<FileUploadForm> {
   }
 
   String _formatType(String type) {
-    if (type.isEmpty) return type;
-    final lower = type.toLowerCase();
-    return lower[0].toUpperCase() + lower.substring(1);
+    const labels = {
+      'LAB_RESULTS': 'Lab results',
+      'IMAGING': 'Imaging',
+      'PRESCRIPTIONS': 'Prescriptions',
+      'VACCINATIONS': 'Vaccinations',
+      'REFERRALS': 'Referrals',
+      'VISIT_NOTES': 'Visit / Clinical notes',
+      'ADMINISTRATIVE': 'Administrative / Insurance',
+      'OTHER': 'Other',
+    };
+
+    return labels[type] ?? type.replaceAll('_', ' ');
   }
 
   String _formatDate(DateTime date) {
