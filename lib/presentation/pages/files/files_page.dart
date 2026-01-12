@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import 'package:medigraf/core/di/providers.dart';
 import 'package:medigraf/data/datasources/local/app_database.dart';
@@ -24,6 +25,27 @@ class _FilesPageState extends ConsumerState<FilesPage> {
   late final AppDatabase _db;
   late final DbFileService _dbFileService;
   late Future<List<DbFile>> _filesFuture;
+
+  List<_FilesListEntry> _buildEntries(
+    List<DbFile> files,
+    DateFormat monthFormat,
+  ) {
+    final entries = <_FilesListEntry>[];
+    String? currentMonth;
+
+    for (final file in files) {
+      final monthKey = monthFormat.format(
+        DateTime(file.fileDate.year, file.fileDate.month),
+      );
+      if (monthKey != currentMonth) {
+        currentMonth = monthKey;
+        entries.add(_FilesListEntry.header(monthKey));
+      }
+      entries.add(_FilesListEntry.file(file));
+    }
+
+    return entries;
+  }
 
   @override
   void initState() {
@@ -53,6 +75,16 @@ class _FilesPageState extends ConsumerState<FilesPage> {
   @override
   Widget build(BuildContext context) {
     final selectedParticipants = ref.watch(selectedParticipantsProvider);
+    final participantsAsync = ref.watch(participantsProvider);
+    final participants = participantsAsync.maybeWhen(
+      data: (data) => data,
+      orElse: () => const <Participant>[],
+    );
+    final participantMap = {
+      for (final participant in participants) participant.id: participant
+    };
+    final monthFormat =
+        DateFormat('MMM yyyy', Localizations.localeOf(context).toString());
 
     return Scaffold(
       appBar: const AppHeader(),
@@ -96,11 +128,35 @@ class _FilesPageState extends ConsumerState<FilesPage> {
                     );
                   }
 
+                  final entries = _buildEntries(filteredFiles, monthFormat);
+
                   return ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: filteredFiles.length,
-                    itemBuilder: (context, index) =>
-                        FileCard(file: filteredFiles[index]),
+                    itemCount: entries.length,
+                    itemBuilder: (context, index) {
+                      final entry = entries[index];
+                      if (entry.header != null) {
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                            top: 8,
+                            bottom: 12,
+                          ),
+                          child: Text(
+                            entry.header!,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        );
+                      }
+
+                      final file = entry.file!;
+                      return FileCard(
+                        file: file,
+                        participant: participantMap[file.participantId],
+                      );
+                    },
                   );
                 },
               ),
@@ -110,4 +166,16 @@ class _FilesPageState extends ConsumerState<FilesPage> {
       ),
     );
   }
+}
+
+class _FilesListEntry {
+  final String? header;
+  final DbFile? file;
+
+  const _FilesListEntry._({this.header, this.file});
+
+  factory _FilesListEntry.header(String header) =>
+      _FilesListEntry._(header: header);
+
+  factory _FilesListEntry.file(DbFile file) => _FilesListEntry._(file: file);
 }
