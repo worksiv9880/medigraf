@@ -157,7 +157,13 @@ class MetricChart extends ConsumerWidget {
                 maxX: maxX,
                 minY: minChartY,
                 maxY: maxChartY,
-                borderData: FlBorderData(show: false),
+                borderData: FlBorderData(
+                  show: true,
+                  border: Border.all(
+                    color: Colors.grey.withOpacity(0.6),
+                    width: 1,
+                  ),
+                ),
                 gridData: grid.toGridData(),
                 titlesData: FlTitlesData(
                   leftTitles: AxisTitles(
