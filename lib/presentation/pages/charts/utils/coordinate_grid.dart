@@ -18,6 +18,7 @@ class CoordinateGrid {
 
   FlGridData toGridData() {
     return FlGridData(
+      show: true,
       drawHorizontalLine: true,
       drawVerticalLine: true,
       horizontalInterval: horizontalInterval,
