@@ -79,10 +79,17 @@ class UploadFileDialog extends ConsumerWidget {
                       fileService: dbFileService.fileService,
                       onCancel: () => Navigator.of(context).pop(false),
                       onSubmit: (data) async {
-                        for (final file in data.files) {
+                        final baseTitle = data.title.trim();
+                        final hasMultiple = data.files.length > 1;
+                        for (var i = 0; i < data.files.length; i++) {
+                          final index = i + 1;
+                          final file = data.files[i];
+                          final resolvedTitle = hasMultiple
+                              ? '$baseTitle($index)'
+                              : baseTitle;
                           await dbFileService.addFileWithMetadata(
                             participantId: data.participantId,
-                            title: data.title,
+                            title: resolvedTitle,
                             type: data.type,
                             file: file,
                             fileDate: data.fileDate,

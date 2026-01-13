@@ -23,6 +23,17 @@ class FilesPage extends ConsumerStatefulWidget {
 }
 
 class _FilesPageState extends ConsumerState<FilesPage> {
+  static const List<String> _documentTypes = [
+    'LAB_RESULTS',
+    'IMAGING',
+    'PRESCRIPTIONS',
+    'VACCINATIONS',
+    'REFERRALS',
+    'VISIT_NOTES',
+    'ADMINISTRATIVE',
+    'OTHER',
+  ];
+
   late final AppDatabase _db;
   late final DbFileService _dbFileService;
   late Future<List<DbFile>> _filesFuture;
@@ -87,47 +98,132 @@ class _FilesPageState extends ConsumerState<FilesPage> {
     }
   }
 
-  Future<void> _renameFile(DbFile file) async {
+  String _formatType(String type) {
+    const labels = {
+      'LAB_RESULTS': 'Lab results',
+      'IMAGING': 'Imaging',
+      'PRESCRIPTIONS': 'Prescriptions',
+      'VACCINATIONS': 'Vaccinations',
+      'REFERRALS': 'Referrals',
+      'VISIT_NOTES': 'Visit / Clinical notes',
+      'ADMINISTRATIVE': 'Administrative / Insurance',
+      'OTHER': 'Other',
+    };
+
+    return labels[type] ?? type.replaceAll('_', ' ');
+  }
+
+  String _formatDate(DateTime date) {
+    return DateFormat('dd.MM.yyyy').format(date);
+  }
+
+  Future<void> _editFile(DbFile file) async {
     final controller = TextEditingController(text: file.title);
-    final updatedTitle = await showDialog<String>(
+    String selectedType = _documentTypes.contains(file.type)
+        ? file.type
+        : (_documentTypes.isNotEmpty ? _documentTypes.first : file.type);
+    DateTime selectedDate = file.fileDate;
+
+    final shouldSave = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Rename document'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Document title',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          title: const Text('Edit document'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  labelText: 'Document title',
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedType,
+                items: _documentTypes
+                    .map(
+                      (type) => DropdownMenuItem<String>(
+                        value: type,
+                        child: Text(_formatType(type)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  setModalState(() => selectedType = value);
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Document type',
+                ),
+              ),
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime(DateTime.now().year - 5),
+                    lastDate: DateTime(DateTime.now().year + 5),
+                  );
+                  if (picked != null) {
+                    setModalState(() => selectedDate = picked);
+                  }
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Document date',
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(_formatDate(selectedDate)),
+                      const Icon(Icons.calendar_today),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(
-              controller.text.trim(),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
             ),
-            child: const Text('Save'),
-          ),
-        ],
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
       ),
     );
 
-    if (!mounted || updatedTitle == null || updatedTitle.isEmpty) {
+    if (!mounted || shouldSave != true) {
       return;
     }
 
-    final success = await _dbFileService.renameFile(
+    final updatedTitle = controller.text.trim();
+    if (updatedTitle.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Введите название документа')),
+      );
+      return;
+    }
+
+    final success = await _dbFileService.updateFileMetadata(
       id: file.id,
       title: updatedTitle,
+      type: selectedType,
+      fileDate: selectedDate,
     );
 
     if (!mounted) return;
 
     if (!success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось переименовать файл')),
+        const SnackBar(content: Text('Не удалось обновить файл')),
       );
       return;
     }
@@ -247,7 +343,7 @@ class _FilesPageState extends ConsumerState<FilesPage> {
                         file: file,
                         participant: participantMap[file.participantId],
                         onShare: () => _shareFile(file),
-                        onRename: () => _renameFile(file),
+                        onEdit: () => _editFile(file),
                         onDelete: () => _deleteFile(file),
                       );
                     },

@@ -8,7 +8,7 @@ class FileCard extends StatelessWidget {
   final DbFile file;
   final Participant? participant;
   final VoidCallback? onShare;
-  final VoidCallback? onRename;
+  final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
   const FileCard({
@@ -16,7 +16,7 @@ class FileCard extends StatelessWidget {
     required this.file,
     this.participant,
     this.onShare,
-    this.onRename,
+    this.onEdit,
     this.onDelete,
   });
 
@@ -65,14 +65,14 @@ class FileCard extends StatelessWidget {
         ),
       );
     }
-    if (onRename != null) {
+    if (onEdit != null) {
       actions.add(
         SlidableAction(
-          onPressed: (_) => onRename?.call(),
+          onPressed: (_) => onEdit?.call(),
           backgroundColor: Colors.amber.shade50,
           foregroundColor: Colors.orange.shade800,
           icon: Icons.edit,
-          label: 'Rename',
+          label: 'Edit',
         ),
       );
     }
@@ -93,6 +93,10 @@ class FileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cardColor = theme.colorScheme.surface;
+    final outlineColor = theme.colorScheme.outlineVariant;
+    final badgeTextColor = theme.colorScheme.onSurface.withOpacity(0.75);
     final formattedDate = DateFormat('dd.MM.yyyy').format(file.fileDate);
     final typeLabel = _resolveTypeLabel(file.type);
     final typeIcon = _resolveTypeIcon(file.type);
@@ -117,7 +121,8 @@ class FileCard extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.grey.shade200),
+              color: cardColor,
+              border: Border.all(color: outlineColor),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,10 +131,10 @@ class FileCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: theme.colorScheme.surfaceVariant,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(typeIcon, color: Colors.grey.shade700),
+                  child: Icon(typeIcon, color: badgeTextColor),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -153,14 +158,15 @@ class FileCard extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
+                                color: cardColor,
                                 borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: outlineColor),
                               ),
                               child: Text(
                                 '${participant!.emoji} ${participant!.name}',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey.shade700,
+                                  color: badgeTextColor,
                                 ),
                               ),
                             ),
@@ -183,14 +189,15 @@ class FileCard extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
+                              color: cardColor,
                               borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: outlineColor),
                             ),
                             child: Text(
                               typeLabel,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey.shade600,
+                                color: badgeTextColor,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),

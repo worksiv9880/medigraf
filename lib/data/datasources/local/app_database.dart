@@ -144,6 +144,19 @@ class AppDatabase extends _$AppDatabase {
   Future<int> updateFileTitle(int id, String title) =>
       (update(files)..where((t) => t.id.equals(id)))
           .write(FilesCompanion(title: Value(title)));
+  Future<int> updateFileMetadata(
+    int id, {
+    required String title,
+    required String type,
+    required DateTime fileDate,
+  }) =>
+      (update(files)..where((t) => t.id.equals(id))).write(
+        FilesCompanion(
+          title: Value(title),
+          type: Value(type),
+          fileDate: Value(fileDate),
+        ),
+      );
   Future<int> deleteFileById(int id) =>
       (delete(files)..where((t) => t.id.equals(id))).go();
 }

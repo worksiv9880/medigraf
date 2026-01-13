@@ -107,4 +107,19 @@ class DbFileService {
     final updated = await db.updateFileTitle(id, title);
     return updated > 0;
   }
+
+  Future<bool> updateFileMetadata({
+    required int id,
+    required String title,
+    required String type,
+    required DateTime fileDate,
+  }) async {
+    final updated = await db.updateFileMetadata(
+      id,
+      title: title,
+      type: type,
+      fileDate: fileDate,
+    );
+    return updated > 0;
+  }
 }
