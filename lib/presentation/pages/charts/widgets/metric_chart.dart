@@ -137,8 +137,8 @@ class MetricChart extends ConsumerWidget {
     final grid = CoordinateGrid(
       horizontalInterval: yInterval,
       verticalInterval: xInterval,
-      lineColor: Theme.of(context).dividerColor,
-      dashArray: const [6, 4],
+      lineColor: Theme.of(context).colorScheme.outline.withOpacity(0.4),
+      lineWidth: 0.8,
     );
 
     return Padding(
