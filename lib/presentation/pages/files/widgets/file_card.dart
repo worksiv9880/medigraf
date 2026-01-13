@@ -51,15 +51,18 @@ class FileCard extends StatelessWidget {
     return labels[normalized] ?? type.replaceAll('_', ' ');
   }
 
-  List<Widget> _buildActions() {
+  List<Widget> _buildActions(ThemeData theme) {
+    final surface = theme.colorScheme.surface;
+    final outline = theme.colorScheme.outlineVariant;
+    final onSurface = theme.colorScheme.onSurface.withOpacity(0.8);
     final actions = <Widget>[];
 
     if (onShare != null) {
       actions.add(
         SlidableAction(
           onPressed: (_) => onShare?.call(),
-          backgroundColor: Colors.blue.shade50,
-          foregroundColor: Colors.blueGrey.shade700,
+          backgroundColor: surface,
+          foregroundColor: onSurface,
           icon: Icons.share,
           label: 'Share',
         ),
@@ -69,8 +72,8 @@ class FileCard extends StatelessWidget {
       actions.add(
         SlidableAction(
           onPressed: (_) => onEdit?.call(),
-          backgroundColor: Colors.amber.shade50,
-          foregroundColor: Colors.orange.shade800,
+          backgroundColor: surface,
+          foregroundColor: onSurface,
           icon: Icons.edit,
           label: 'Edit',
         ),
@@ -80,11 +83,23 @@ class FileCard extends StatelessWidget {
       actions.add(
         SlidableAction(
           onPressed: (_) => onDelete?.call(),
-          backgroundColor: Colors.red.shade50,
-          foregroundColor: Colors.red.shade700,
+          backgroundColor: surface,
+          foregroundColor: onSurface,
           icon: Icons.delete,
           label: 'Delete',
         ),
+      );
+    }
+
+    for (var i = 0; i < actions.length; i++) {
+      actions[i] = DecoratedBox(
+        decoration: BoxDecoration(
+          color: surface,
+          border: Border(
+            right: BorderSide(color: outline),
+          ),
+        ),
+        child: actions[i],
       );
     }
 
@@ -101,7 +116,7 @@ class FileCard extends StatelessWidget {
     final typeLabel = _resolveTypeLabel(file.type);
     final typeIcon = _resolveTypeIcon(file.type);
 
-    final actions = _buildActions();
+    final actions = _buildActions(theme);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
