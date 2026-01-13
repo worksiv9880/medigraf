@@ -52,7 +52,7 @@ class FileCard extends StatelessWidget {
   }
 
   List<Widget> _buildActions(ThemeData theme) {
-    final surface = theme.colorScheme.surface;
+    final actionBackground = theme.colorScheme.surfaceVariant;
     final outline = theme.colorScheme.outlineVariant;
     final onSurface = theme.colorScheme.onSurface.withOpacity(0.8);
     final actions = <Widget>[];
@@ -61,7 +61,7 @@ class FileCard extends StatelessWidget {
       actions.add(
         SlidableAction(
           onPressed: (_) => onShare?.call(),
-          backgroundColor: surface,
+          backgroundColor: actionBackground,
           foregroundColor: onSurface,
           icon: Icons.share,
           label: 'Share',
@@ -72,7 +72,7 @@ class FileCard extends StatelessWidget {
       actions.add(
         SlidableAction(
           onPressed: (_) => onEdit?.call(),
-          backgroundColor: surface,
+          backgroundColor: actionBackground,
           foregroundColor: onSurface,
           icon: Icons.edit,
           label: 'Edit',
@@ -83,7 +83,7 @@ class FileCard extends StatelessWidget {
       actions.add(
         SlidableAction(
           onPressed: (_) => onDelete?.call(),
-          backgroundColor: surface,
+          backgroundColor: actionBackground,
           foregroundColor: onSurface,
           icon: Icons.delete,
           label: 'Delete',
@@ -92,11 +92,15 @@ class FileCard extends StatelessWidget {
     }
 
     for (var i = 0; i < actions.length; i++) {
+      final isFirst = i == 0;
       actions[i] = DecoratedBox(
         decoration: BoxDecoration(
-          color: surface,
+          color: actionBackground,
           border: Border(
+            left: isFirst ? BorderSide(color: outline) : BorderSide.none,
             right: BorderSide(color: outline),
+            top: BorderSide(color: outline),
+            bottom: BorderSide(color: outline),
           ),
         ),
         child: actions[i],
