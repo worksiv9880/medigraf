@@ -134,6 +134,11 @@ class MetricChart extends ConsumerWidget {
     final xInterval = orderedDates.length <= 6
         ? 1.0
         : (orderedDates.length / 6).ceilToDouble();
+    final minX = 0.0;
+    final maxX = (orderedDates.length - 1).toDouble();
+    final padding = (range * 0.1).clamp(1, double.infinity);
+    final minChartY = minValue - padding;
+    final maxChartY = maxValue + padding;
     final grid = CoordinateGrid(
       horizontalInterval: yInterval,
       verticalInterval: xInterval,
@@ -148,6 +153,10 @@ class MetricChart extends ConsumerWidget {
           Expanded(
             child: LineChart(
               LineChartData(
+                minX: minX,
+                maxX: maxX,
+                minY: minChartY,
+                maxY: maxChartY,
                 borderData: FlBorderData(show: false),
                 gridData: grid.toGridData(),
                 titlesData: FlTitlesData(
