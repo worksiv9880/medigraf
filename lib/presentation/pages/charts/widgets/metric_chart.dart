@@ -130,7 +130,11 @@ class MetricChart extends ConsumerWidget {
     final minValue = minY ?? 0;
     final maxValue = maxY ?? minValue + 1;
     final range = (maxValue - minValue).abs();
-    final yInterval = (range == 0 ? 1 : range / 4).toDouble();
+    final yInterval = range <= 10
+        ? 1.0
+        : range <= 50
+            ? 5.0
+            : 10.0;
     final xInterval = orderedDates.length <= 6
         ? 1.0
         : (orderedDates.length / 6).ceilToDouble();
@@ -151,70 +155,85 @@ class MetricChart extends ConsumerWidget {
       child: Column(
         children: [
           Expanded(
-            child: LineChart(
-              LineChartData(
-                minX: minX,
-                maxX: maxX,
-                minY: minChartY,
-                maxY: maxChartY,
-                borderData: FlBorderData(
-                  show: true,
-                  border: Border.all(
-                    color: Colors.grey.withOpacity(0.6),
-                    width: 1,
-                  ),
-                ),
-                gridData: grid.toGridData(),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 44,
-                      interval: yInterval,
+            child: SizedBox(
+              height: 280,
+              child: LineChart(
+                LineChartData(
+                  minX: minX,
+                  maxX: maxX,
+                  minY: minChartY,
+                  maxY: maxChartY,
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border.all(
+                      color: Colors.grey.withOpacity(0.6),
+                      width: 1,
                     ),
                   ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: xInterval,
-                      reservedSize: 48,
-                      getTitlesWidget: (value, meta) {
-                        final index = value.toInt();
-                        if (index < 0 || index >= orderedDates.length) {
-                          return const SizedBox.shrink();
-                        }
-                        final dateLabel = DateFormat('dd/MM/yyyy')
-                            .format(orderedDates[index]);
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Transform.rotate(
-                            angle: -0.6,
-                            child: Text(
-                              dateLabel,
-                              style: const TextStyle(fontSize: 10),
+                  gridData: grid.toGridData(),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 48,
+                        interval: yInterval,
+                        getTitlesWidget: (value, meta) {
+                          final displayValue = value % 1 == 0
+                              ? value.toInt().toString()
+                              : value.toStringAsFixed(1);
+                          return Text(
+                            displayValue,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.black87,
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: xInterval,
+                        reservedSize: 48,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index < 0 || index >= orderedDates.length) {
+                            return const SizedBox.shrink();
+                          }
+                          final dateLabel = DateFormat('dd/MM/yyyy')
+                              .format(orderedDates[index]);
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Transform.rotate(
+                              angle: -0.6,
+                              child: Text(
+                                dateLabel,
+                                style: const TextStyle(fontSize: 10),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
+                  lineBarsData: updatedSeries
+                      .map(
+                        (entry) => LineChartBarData(
+                          spots: entry.spots,
+                          isCurved: true,
+                          color: entry.color,
+                          barWidth: 3,
+                        ),
+                      )
+                      .toList(),
                 ),
-                lineBarsData: updatedSeries
-                    .map(
-                      (entry) => LineChartBarData(
-                        spots: entry.spots,
-                        isCurved: true,
-                        color: entry.color,
-                        barWidth: 3,
-                      ),
-                    )
-                    .toList(),
               ),
             ),
           ),
