@@ -141,10 +141,22 @@ class MetricChart extends ConsumerWidget {
           Expanded(
             child: LineChart(
               LineChartData(
-                borderData: FlBorderData(show: false),
+                borderData: FlBorderData(
+                  show: true,
+                  border: Border(
+                    left: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
+                    right: const BorderSide(color: Colors.transparent),
+                    top: const BorderSide(color: Colors.transparent),
+                  ),
+                ),
                 gridData: FlGridData(
                   drawHorizontalLine: true,
-                  drawVerticalLine: false,
+                  drawVerticalLine: true,
                 ),
                 titlesData: FlTitlesData(
                   leftTitles: AxisTitles(
