@@ -133,6 +133,10 @@ class MetricChart extends ConsumerWidget {
     final xInterval = orderedDates.length <= 6
         ? 1.0
         : (orderedDates.length / 6).ceilToDouble();
+    final axisLineColor = Theme.of(context).colorScheme.onSurface.withOpacity(
+          0.35,
+        );
+    const axisLineWidth = 1.5;
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -145,10 +149,12 @@ class MetricChart extends ConsumerWidget {
                   show: true,
                   border: Border(
                     left: BorderSide(
-                      color: Theme.of(context).dividerColor,
+                      color: axisLineColor,
+                      width: axisLineWidth,
                     ),
                     bottom: BorderSide(
-                      color: Theme.of(context).dividerColor,
+                      color: axisLineColor,
+                      width: axisLineWidth,
                     ),
                     right: const BorderSide(color: Colors.transparent),
                     top: const BorderSide(color: Colors.transparent),
