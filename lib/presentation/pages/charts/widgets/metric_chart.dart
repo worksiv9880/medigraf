@@ -6,6 +6,7 @@ import '../../../../core/di/providers.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../data/datasources/local/app_database.dart';
+import '../utils/coordinate_grid.dart';
 import '../utils/chart_colors.dart';
 
 class MetricChart extends ConsumerWidget {
@@ -133,6 +134,11 @@ class MetricChart extends ConsumerWidget {
     final xInterval = orderedDates.length <= 6
         ? 1.0
         : (orderedDates.length / 6).ceilToDouble();
+    final grid = CoordinateGrid(
+      horizontalInterval: yInterval,
+      verticalInterval: xInterval,
+      dashArray: const [6, 4],
+    );
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -142,10 +148,7 @@ class MetricChart extends ConsumerWidget {
             child: LineChart(
               LineChartData(
                 borderData: FlBorderData(show: false),
-                gridData: FlGridData(
-                  drawHorizontalLine: true,
-                  drawVerticalLine: false,
-                ),
+                gridData: grid.toGridData(),
                 titlesData: FlTitlesData(
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
