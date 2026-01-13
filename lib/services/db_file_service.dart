@@ -99,4 +99,12 @@ class DbFileService {
       ),
     );
   }
+
+  Future<bool> renameFile({
+    required int id,
+    required String title,
+  }) async {
+    final updated = await db.updateFileTitle(id, title);
+    return updated > 0;
+  }
 }
