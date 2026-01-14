@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -22,10 +23,42 @@ class FilesPage extends ConsumerStatefulWidget {
   ConsumerState<FilesPage> createState() => _FilesPageState();
 }
 
-class _FilesPageState extends ConsumerState<FilesPage> {
+class _FilesPageState extends ConsumerState<FilesPage>
+    with TickerProviderStateMixin {
+  static const List<String> _documentTypes = [
+    'LAB_RESULTS',
+    'IMAGING',
+    'PRESCRIPTIONS',
+    'VACCINATIONS',
+    'REFERRALS',
+    'VISIT_NOTES',
+    'ADMINISTRATIVE',
+    'OTHER',
+  ];
+
+  // один tag на весь список, чтобы auto-close работал между карточками
+  static const Object _slidableGroupTag = 'files_group';
+
   late final AppDatabase _db;
   late final DbFileService _dbFileService;
   late Future<List<DbFile>> _filesFuture;
+
+  // controller на каждую карточку
+  final Map<String, SlidableController> _slidableControllers = {};
+
+  SlidableController _controllerFor(DbFile file) {
+    final key = 'file-${file.id}-${file.filePath}';
+    return _slidableControllers.putIfAbsent(
+      key,
+      () => SlidableController(this),
+    );
+  }
+
+  void _closeAllSlidables() {
+    for (final c in _slidableControllers.values) {
+      c.close();
+    }
+  }
 
   List<_FilesListEntry> _buildEntries(
     List<DbFile> files,
@@ -58,6 +91,15 @@ class _FilesPageState extends ConsumerState<FilesPage> {
     _loadFiles();
   }
 
+  @override
+  void dispose() {
+    for (final c in _slidableControllers.values) {
+      c.dispose();
+    }
+    _slidableControllers.clear();
+    super.dispose();
+  }
+
   void _loadFiles() {
     _filesFuture = _db.getFiles();
   }
@@ -87,47 +129,130 @@ class _FilesPageState extends ConsumerState<FilesPage> {
     }
   }
 
-  Future<void> _renameFile(DbFile file) async {
+  String _formatType(String type) {
+    const labels = {
+      'LAB_RESULTS': 'Lab results',
+      'IMAGING': 'Imaging',
+      'PRESCRIPTIONS': 'Prescriptions',
+      'VACCINATIONS': 'Vaccinations',
+      'REFERRALS': 'Referrals',
+      'VISIT_NOTES': 'Visit / Clinical notes',
+      'ADMINISTRATIVE': 'Administrative / Insurance',
+      'OTHER': 'Other',
+    };
+
+    return labels[type] ?? type.replaceAll('_', ' ');
+  }
+
+  String _formatDate(DateTime date) {
+    return DateFormat('dd.MM.yyyy').format(date);
+  }
+
+  Future<void> _editFile(DbFile file) async {
     final controller = TextEditingController(text: file.title);
-    final updatedTitle = await showDialog<String>(
+    String selectedType = _documentTypes.contains(file.type)
+        ? file.type
+        : (_documentTypes.isNotEmpty ? _documentTypes.first : file.type);
+    DateTime selectedDate = file.fileDate;
+
+    final shouldSave = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Rename document'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Document title',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          title: const Text('Edit document'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  labelText: 'Document title',
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedType,
+                items: _documentTypes
+                    .map(
+                      (type) => DropdownMenuItem<String>(
+                        value: type,
+                        child: Text(_formatType(type)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  setModalState(() => selectedType = value);
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Document type',
+                ),
+              ),
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime(DateTime.now().year - 5),
+                    lastDate: DateTime(DateTime.now().year + 5),
+                  );
+                  if (picked != null) {
+                    setModalState(() => selectedDate = picked);
+                  }
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Document date',
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(_formatDate(selectedDate)),
+                      const Icon(Icons.calendar_today),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(
-              controller.text.trim(),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
             ),
-            child: const Text('Save'),
-          ),
-        ],
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
       ),
     );
 
-    if (!mounted || updatedTitle == null || updatedTitle.isEmpty) {
+    if (!mounted || shouldSave != true) return;
+
+    final updatedTitle = controller.text.trim();
+    if (updatedTitle.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Введите название документа')),
+      );
       return;
     }
 
-    final success = await _dbFileService.renameFile(
+    final success = await _dbFileService.updateFileMetadata(
       id: file.id,
       title: updatedTitle,
+      type: selectedType,
+      fileDate: selectedDate,
     );
 
     if (!mounted) return;
 
     if (!success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось переименовать файл')),
+        const SnackBar(content: Text('Не удалось обновить файл')),
       );
       return;
     }
@@ -140,7 +265,8 @@ class _FilesPageState extends ConsumerState<FilesPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete document'),
-        content: const Text('Удалить этот документ? Это действие нельзя отменить.'),
+        content:
+            const Text('Удалить этот документ? Это действие нельзя отменить.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -178,84 +304,106 @@ class _FilesPageState extends ConsumerState<FilesPage> {
         DateFormat('MMM yyyy', Localizations.localeOf(context).toString());
 
     return Scaffold(
-      appBar: const AppHeader(),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) => _closeAllSlidables(),
+          child: const AppHeader(),
+        ),
+      ),
+
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const ParticipantFilter(),
-            const SizedBox(height: 16),
-            FilesHeader(onUpload: _openUploadDialog),
-            const SizedBox(height: 12),
-            Expanded(
-              child: FutureBuilder<List<DbFile>>(
-                future: _filesFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
 
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Ошибка: ${snapshot.error}'));
-                  }
+      // ✅ ловим любые нажатия в body (включая ParticipantFilter/FilesHeader/кнопки)
+      body: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) => _closeAllSlidables(),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const ParticipantFilter(),
+              const SizedBox(height: 16),
+              FilesHeader(onUpload: _openUploadDialog),
+              const SizedBox(height: 12),
+              Expanded(
+                child: FutureBuilder<List<DbFile>>(
+                  future: _filesFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                  final files = snapshot.data ?? [];
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Ошибка: ${snapshot.error}'));
+                    }
 
-                  if (selectedParticipants.isEmpty) {
-                    return const Center(
-                      child: Text('Выберите участников, чтобы увидеть файлы'),
-                    );
-                  }
+                    final files = snapshot.data ?? [];
 
-                  final filteredFiles = files
-                      .where((file) =>
-                          selectedParticipants.contains(file.participantId))
-                      .toList();
-
-                  if (filteredFiles.isEmpty) {
-                    return const Center(
-                      child: Text('Нет файлов для выбранных участников'),
-                    );
-                  }
-
-                  final entries = _buildEntries(filteredFiles, monthFormat);
-
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: entries.length,
-                    itemBuilder: (context, index) {
-                      final entry = entries[index];
-                      if (entry.header != null) {
-                        return Padding(
-                          padding: const EdgeInsets.only(
-                            top: 8,
-                            bottom: 12,
-                          ),
-                          child: Text(
-                            entry.header!,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                        );
-                      }
-
-                      final file = entry.file!;
-                      return FileCard(
-                        file: file,
-                        participant: participantMap[file.participantId],
-                        onShare: () => _shareFile(file),
-                        onRename: () => _renameFile(file),
-                        onDelete: () => _deleteFile(file),
+                    if (selectedParticipants.isEmpty) {
+                      return const Center(
+                        child: Text('Выберите участников, чтобы увидеть файлы'),
                       );
-                    },
-                  );
-                },
+                    }
+
+                    final filteredFiles = files
+                        .where((file) =>
+                            selectedParticipants.contains(file.participantId))
+                        .toList();
+
+                    if (filteredFiles.isEmpty) {
+                      return const Center(
+                        child: Text('Нет файлов для выбранных участников'),
+                      );
+                    }
+
+                    final entries = _buildEntries(filteredFiles, monthFormat);
+
+                    return SlidableAutoCloseBehavior(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: entries.length,
+                        itemBuilder: (context, index) {
+                          final entry = entries[index];
+
+                          if (entry.header != null) {
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                top: 8,
+                                bottom: 12,
+                              ),
+                              child: Text(
+                                entry.header!,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                            );
+                          }
+
+                          final file = entry.file!;
+                          final slidableController = _controllerFor(file);
+
+                          return FileCard(
+                            file: file,
+                            participant: participantMap[file.participantId],
+                            onShare: () => _shareFile(file),
+                            onEdit: () => _editFile(file),
+                            onDelete: () => _deleteFile(file),
+                            slidableController: slidableController,
+                            slidableGroupTag: _slidableGroupTag,
+                            onAnyTapOutside: _closeAllSlidables,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

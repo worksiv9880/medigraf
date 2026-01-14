@@ -8,15 +8,24 @@ class FileCard extends StatelessWidget {
   final DbFile file;
   final Participant? participant;
   final VoidCallback? onShare;
-  final VoidCallback? onRename;
+  final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+
+  final SlidableController slidableController;
+  final Object slidableGroupTag;
+
+  // чтобы закрывать при тапе по карточке/внутри
+  final VoidCallback onAnyTapOutside;
 
   const FileCard({
     super.key,
     required this.file,
+    required this.slidableController,
+    required this.slidableGroupTag,
+    required this.onAnyTapOutside,
     this.participant,
     this.onShare,
-    this.onRename,
+    this.onEdit,
     this.onDelete,
   });
 
@@ -51,39 +60,44 @@ class FileCard extends StatelessWidget {
     return labels[normalized] ?? type.replaceAll('_', ' ');
   }
 
-  List<Widget> _buildActions() {
+  List<Widget> _buildActions(ThemeData theme) {
+    final actionBackground = theme.colorScheme.surfaceVariant;
+    final onSurface = theme.colorScheme.onSurface.withOpacity(0.8);
+
     final actions = <Widget>[];
 
     if (onShare != null) {
       actions.add(
         SlidableAction(
           onPressed: (_) => onShare?.call(),
-          backgroundColor: Colors.blue.shade50,
-          foregroundColor: Colors.blueGrey.shade700,
+          backgroundColor: actionBackground,
+          foregroundColor: onSurface,
           icon: Icons.share,
-          label: 'Share',
+          autoClose: true,
         ),
       );
     }
-    if (onRename != null) {
+
+    if (onEdit != null) {
       actions.add(
         SlidableAction(
-          onPressed: (_) => onRename?.call(),
-          backgroundColor: Colors.amber.shade50,
-          foregroundColor: Colors.orange.shade800,
+          onPressed: (_) => onEdit?.call(),
+          backgroundColor: actionBackground,
+          foregroundColor: onSurface,
           icon: Icons.edit,
-          label: 'Rename',
+          autoClose: true,
         ),
       );
     }
+
     if (onDelete != null) {
       actions.add(
         SlidableAction(
           onPressed: (_) => onDelete?.call(),
-          backgroundColor: Colors.red.shade50,
-          foregroundColor: Colors.red.shade700,
+          backgroundColor: actionBackground,
+          foregroundColor: onSurface,
           icon: Icons.delete,
-          label: 'Delete',
+          autoClose: true,
         ),
       );
     }
@@ -93,31 +107,46 @@ class FileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final cardColor = theme.colorScheme.surface;
+    final outlineColor = theme.colorScheme.outlineVariant;
+    final badgeTextColor = theme.colorScheme.onSurface.withOpacity(0.75);
+
     final formattedDate = DateFormat('dd.MM.yyyy').format(file.fileDate);
     final typeLabel = _resolveTypeLabel(file.type);
     final typeIcon = _resolveTypeIcon(file.type);
 
-    final actions = _buildActions();
+    final actions = _buildActions(theme);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Slidable(
-        key: ValueKey(file.id),
+        key: ValueKey('file-${file.id}-${file.filePath}'),
+        controller: slidableController,
+        groupTag: slidableGroupTag,
+        closeOnScroll: true,
         endActionPane: actions.isEmpty
             ? null
             : ActionPane(
                 motion: const DrawerMotion(),
+                extentRatio: 0.60,
                 children: actions,
               ),
         child: InkWell(
           onTap: () {
+            // если открыто — закрываем
+            slidableController.close();
+            onAnyTapOutside();
+
             // OpenFile.open(file.filePath);
           },
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.grey.shade200),
+              color: cardColor,
+              border: Border.all(color: outlineColor),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,10 +155,10 @@ class FileCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: theme.colorScheme.surfaceVariant,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(typeIcon, color: Colors.grey.shade700),
+                  child: Icon(typeIcon, color: badgeTextColor),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -153,14 +182,15 @@ class FileCard extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
+                                color: cardColor,
                                 borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: outlineColor),
                               ),
                               child: Text(
                                 '${participant!.emoji} ${participant!.name}',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey.shade700,
+                                  color: badgeTextColor,
                                 ),
                               ),
                             ),
@@ -183,14 +213,15 @@ class FileCard extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
+                              color: cardColor,
                               borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: outlineColor),
                             ),
                             child: Text(
                               typeLabel,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey.shade600,
+                                color: badgeTextColor,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
