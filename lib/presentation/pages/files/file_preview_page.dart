@@ -177,11 +177,6 @@ class _FilePreviewPageState extends State<FilePreviewPage> {
               setState(() => _pdfLoadFailed = true);
             }
           },
-          onPageError: (_, __) {
-            if (mounted) {
-              setState(() => _pdfLoadFailed = true);
-            }
-          },
         ),
       );
     }
