@@ -151,12 +151,12 @@ class MetricChart extends ConsumerWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
       child: Column(
         children: [
           Expanded(
             child: SizedBox(
-              height: 380,
+              height: 440,
               child: LineChart(
                 LineChartData(
                   minX: minX,
