@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as p;
 import 'package:pdfx/pdfx.dart';
 import 'package:medigraf/data/datasources/local/app_database.dart';
@@ -184,24 +183,28 @@ class _FilePreviewPageState extends State<FilePreviewPage> {
     if (_isImage(widget.file.filePath) && !_imageLoadFailed) {
       return Container(
         color: Colors.black,
-        child: Center(
-          child: GestureDetector(
-            onDoubleTap: _toggleImageZoom,
-            child: InteractiveViewer(
-              transformationController: _imageController,
-              minScale: 1,
-              maxScale: 4,
-              child: Image.file(
-                File(widget.file.filePath),
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) {
-                      setState(() => _imageLoadFailed = true);
-                    }
-                  });
-                  return const SizedBox.shrink();
-                },
+        child: LayoutBuilder(
+          builder: (context, constraints) => Center(
+            child: GestureDetector(
+              onDoubleTap: _toggleImageZoom,
+              child: InteractiveViewer(
+                transformationController: _imageController,
+                minScale: 1,
+                maxScale: 4,
+                child: Image.file(
+                  File(widget.file.filePath),
+                  width: constraints.maxWidth,
+                  height: constraints.maxHeight,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        setState(() => _imageLoadFailed = true);
+                      }
+                    });
+                    return const SizedBox.shrink();
+                  },
+                ),
               ),
             ),
           ),
@@ -233,15 +236,6 @@ class _FilePreviewPageState extends State<FilePreviewPage> {
               _formatSize(widget.file.fileSize),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () => OpenFilex.open(widget.file.filePath),
-                icon: const Icon(Icons.open_in_new),
-                label: const Text('Open with…'),
               ),
             ),
           ],
