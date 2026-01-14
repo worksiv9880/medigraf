@@ -11,9 +11,18 @@ class FileCard extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
+  final SlidableController slidableController;
+  final Object slidableGroupTag;
+
+  // чтобы закрывать при тапе по карточке/внутри
+  final VoidCallback onAnyTapOutside;
+
   const FileCard({
     super.key,
     required this.file,
+    required this.slidableController,
+    required this.slidableGroupTag,
+    required this.onAnyTapOutside,
     this.participant,
     this.onShare,
     this.onEdit,
@@ -53,8 +62,8 @@ class FileCard extends StatelessWidget {
 
   List<Widget> _buildActions(ThemeData theme) {
     final actionBackground = theme.colorScheme.surfaceVariant;
-    final outline = theme.colorScheme.outlineVariant;
     final onSurface = theme.colorScheme.onSurface.withOpacity(0.8);
+
     final actions = <Widget>[];
 
     if (onShare != null) {
@@ -64,10 +73,11 @@ class FileCard extends StatelessWidget {
           backgroundColor: actionBackground,
           foregroundColor: onSurface,
           icon: Icons.share,
-          label: 'Share',
+          autoClose: true,
         ),
       );
     }
+
     if (onEdit != null) {
       actions.add(
         SlidableAction(
@@ -75,10 +85,11 @@ class FileCard extends StatelessWidget {
           backgroundColor: actionBackground,
           foregroundColor: onSurface,
           icon: Icons.edit,
-          label: 'Edit',
+          autoClose: true,
         ),
       );
     }
+
     if (onDelete != null) {
       actions.add(
         SlidableAction(
@@ -86,24 +97,8 @@ class FileCard extends StatelessWidget {
           backgroundColor: actionBackground,
           foregroundColor: onSurface,
           icon: Icons.delete,
-          label: 'Delete',
+          autoClose: true,
         ),
-      );
-    }
-
-    for (var i = 0; i < actions.length; i++) {
-      final isFirst = i == 0;
-      actions[i] = DecoratedBox(
-        decoration: BoxDecoration(
-          color: actionBackground,
-          border: Border(
-            left: isFirst ? BorderSide(color: outline) : BorderSide.none,
-            right: BorderSide(color: outline),
-            top: BorderSide(color: outline),
-            bottom: BorderSide(color: outline),
-          ),
-        ),
-        child: actions[i],
       );
     }
 
@@ -113,9 +108,11 @@ class FileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     final cardColor = theme.colorScheme.surface;
     final outlineColor = theme.colorScheme.outlineVariant;
     final badgeTextColor = theme.colorScheme.onSurface.withOpacity(0.75);
+
     final formattedDate = DateFormat('dd.MM.yyyy').format(file.fileDate);
     final typeLabel = _resolveTypeLabel(file.type);
     final typeIcon = _resolveTypeIcon(file.type);
@@ -125,15 +122,23 @@ class FileCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Slidable(
-        key: ValueKey(file.id),
+        key: ValueKey('file-${file.id}-${file.filePath}'),
+        controller: slidableController,
+        groupTag: slidableGroupTag,
+        closeOnScroll: true,
         endActionPane: actions.isEmpty
             ? null
             : ActionPane(
                 motion: const DrawerMotion(),
+                extentRatio: 0.60,
                 children: actions,
               ),
         child: InkWell(
           onTap: () {
+            // если открыто — закрываем
+            slidableController.close();
+            onAnyTapOutside();
+
             // OpenFile.open(file.filePath);
           },
           child: Container(

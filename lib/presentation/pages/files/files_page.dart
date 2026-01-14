@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -22,7 +23,8 @@ class FilesPage extends ConsumerStatefulWidget {
   ConsumerState<FilesPage> createState() => _FilesPageState();
 }
 
-class _FilesPageState extends ConsumerState<FilesPage> {
+class _FilesPageState extends ConsumerState<FilesPage>
+    with TickerProviderStateMixin {
   static const List<String> _documentTypes = [
     'LAB_RESULTS',
     'IMAGING',
@@ -34,9 +36,29 @@ class _FilesPageState extends ConsumerState<FilesPage> {
     'OTHER',
   ];
 
+  // один tag на весь список, чтобы auto-close работал между карточками
+  static const Object _slidableGroupTag = 'files_group';
+
   late final AppDatabase _db;
   late final DbFileService _dbFileService;
   late Future<List<DbFile>> _filesFuture;
+
+  // controller на каждую карточку
+  final Map<String, SlidableController> _slidableControllers = {};
+
+  SlidableController _controllerFor(DbFile file) {
+    final key = 'file-${file.id}-${file.filePath}';
+    return _slidableControllers.putIfAbsent(
+      key,
+      () => SlidableController(this),
+    );
+  }
+
+  void _closeAllSlidables() {
+    for (final c in _slidableControllers.values) {
+      c.close();
+    }
+  }
 
   List<_FilesListEntry> _buildEntries(
     List<DbFile> files,
@@ -67,6 +89,15 @@ class _FilesPageState extends ConsumerState<FilesPage> {
     _dbFileService = DbFileService(_db, FileService());
 
     _loadFiles();
+  }
+
+  @override
+  void dispose() {
+    for (final c in _slidableControllers.values) {
+      c.dispose();
+    }
+    _slidableControllers.clear();
+    super.dispose();
   }
 
   void _loadFiles() {
@@ -200,9 +231,7 @@ class _FilesPageState extends ConsumerState<FilesPage> {
       ),
     );
 
-    if (!mounted || shouldSave != true) {
-      return;
-    }
+    if (!mounted || shouldSave != true) return;
 
     final updatedTitle = controller.text.trim();
     if (updatedTitle.isEmpty) {
@@ -236,7 +265,8 @@ class _FilesPageState extends ConsumerState<FilesPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete document'),
-        content: const Text('Удалить этот документ? Это действие нельзя отменить.'),
+        content:
+            const Text('Удалить этот документ? Это действие нельзя отменить.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -274,84 +304,106 @@ class _FilesPageState extends ConsumerState<FilesPage> {
         DateFormat('MMM yyyy', Localizations.localeOf(context).toString());
 
     return Scaffold(
-      appBar: const AppHeader(),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) => _closeAllSlidables(),
+          child: const AppHeader(),
+        ),
+      ),
+
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const ParticipantFilter(),
-            const SizedBox(height: 16),
-            FilesHeader(onUpload: _openUploadDialog),
-            const SizedBox(height: 12),
-            Expanded(
-              child: FutureBuilder<List<DbFile>>(
-                future: _filesFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
 
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Ошибка: ${snapshot.error}'));
-                  }
+      // ✅ ловим любые нажатия в body (включая ParticipantFilter/FilesHeader/кнопки)
+      body: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) => _closeAllSlidables(),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const ParticipantFilter(),
+              const SizedBox(height: 16),
+              FilesHeader(onUpload: _openUploadDialog),
+              const SizedBox(height: 12),
+              Expanded(
+                child: FutureBuilder<List<DbFile>>(
+                  future: _filesFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                  final files = snapshot.data ?? [];
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Ошибка: ${snapshot.error}'));
+                    }
 
-                  if (selectedParticipants.isEmpty) {
-                    return const Center(
-                      child: Text('Выберите участников, чтобы увидеть файлы'),
-                    );
-                  }
+                    final files = snapshot.data ?? [];
 
-                  final filteredFiles = files
-                      .where((file) =>
-                          selectedParticipants.contains(file.participantId))
-                      .toList();
-
-                  if (filteredFiles.isEmpty) {
-                    return const Center(
-                      child: Text('Нет файлов для выбранных участников'),
-                    );
-                  }
-
-                  final entries = _buildEntries(filteredFiles, monthFormat);
-
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: entries.length,
-                    itemBuilder: (context, index) {
-                      final entry = entries[index];
-                      if (entry.header != null) {
-                        return Padding(
-                          padding: const EdgeInsets.only(
-                            top: 8,
-                            bottom: 12,
-                          ),
-                          child: Text(
-                            entry.header!,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                        );
-                      }
-
-                      final file = entry.file!;
-                      return FileCard(
-                        file: file,
-                        participant: participantMap[file.participantId],
-                        onShare: () => _shareFile(file),
-                        onEdit: () => _editFile(file),
-                        onDelete: () => _deleteFile(file),
+                    if (selectedParticipants.isEmpty) {
+                      return const Center(
+                        child: Text('Выберите участников, чтобы увидеть файлы'),
                       );
-                    },
-                  );
-                },
+                    }
+
+                    final filteredFiles = files
+                        .where((file) =>
+                            selectedParticipants.contains(file.participantId))
+                        .toList();
+
+                    if (filteredFiles.isEmpty) {
+                      return const Center(
+                        child: Text('Нет файлов для выбранных участников'),
+                      );
+                    }
+
+                    final entries = _buildEntries(filteredFiles, monthFormat);
+
+                    return SlidableAutoCloseBehavior(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: entries.length,
+                        itemBuilder: (context, index) {
+                          final entry = entries[index];
+
+                          if (entry.header != null) {
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                top: 8,
+                                bottom: 12,
+                              ),
+                              child: Text(
+                                entry.header!,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                            );
+                          }
+
+                          final file = entry.file!;
+                          final slidableController = _controllerFor(file);
+
+                          return FileCard(
+                            file: file,
+                            participant: participantMap[file.participantId],
+                            onShare: () => _shareFile(file),
+                            onEdit: () => _editFile(file),
+                            onDelete: () => _deleteFile(file),
+                            slidableController: slidableController,
+                            slidableGroupTag: _slidableGroupTag,
+                            onAnyTapOutside: _closeAllSlidables,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
