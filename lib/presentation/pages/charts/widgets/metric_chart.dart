@@ -156,7 +156,7 @@ class MetricChart extends ConsumerWidget {
         children: [
           Expanded(
             child: SizedBox(
-              height: 280,
+              height: 340,
               child: LineChart(
                 LineChartData(
                   minX: minX,
