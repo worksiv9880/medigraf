@@ -33,6 +33,7 @@ class _FilesPageState extends ConsumerState<FilesPage>
     'REFERRALS',
     'VISIT_NOTES',
     'ADMINISTRATIVE',
+    'RECEIPT',
     'OTHER',
   ];
 
@@ -138,6 +139,7 @@ class _FilesPageState extends ConsumerState<FilesPage>
       'REFERRALS': 'Referrals',
       'VISIT_NOTES': 'Visit / Clinical notes',
       'ADMINISTRATIVE': 'Administrative / Insurance',
+      'RECEIPT': 'Receipt',
       'OTHER': 'Other',
     };
 

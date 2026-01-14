@@ -39,6 +39,7 @@ class FileCard extends StatelessWidget {
       'REFERRALS': Icons.assignment_return,
       'VISIT_NOTES': Icons.assignment,
       'ADMINISTRATIVE': Icons.badge,
+      'RECEIPT': Icons.receipt_long,
       'OTHER': Icons.insert_drive_file,
     };
 
@@ -54,6 +55,7 @@ class FileCard extends StatelessWidget {
       'REFERRALS': 'Referrals',
       'VISIT_NOTES': 'Visit / Clinical notes',
       'ADMINISTRATIVE': 'Administrative / Insurance',
+      'RECEIPT': 'Receipt',
       'OTHER': 'Other',
     };
     final normalized = type.trim().toUpperCase();
