@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as p;
 import 'package:pdfx/pdfx.dart';
-import 'package:photo_view/photo_view.dart';
 import 'package:medigraf/data/datasources/local/app_database.dart';
 
 class FilePreviewPage extends StatefulWidget {
@@ -30,20 +29,28 @@ class FilePreviewPage extends StatefulWidget {
 
 class _FilePreviewPageState extends State<FilePreviewPage> {
   PdfControllerPinch? _pdfController;
+  final TransformationController _imageController = TransformationController();
+  bool _pdfLoadFailed = false;
+  bool _imageLoadFailed = false;
 
   @override
   void initState() {
     super.initState();
     if (_isPdf(widget.file.filePath)) {
-      _pdfController = PdfControllerPinch(
-        document: PdfDocument.openFile(widget.file.filePath),
-      );
+      try {
+        _pdfController = PdfControllerPinch(
+          document: PdfDocument.openFile(widget.file.filePath),
+        );
+      } catch (_) {
+        _pdfLoadFailed = true;
+      }
     }
   }
 
   @override
   void dispose() {
     _pdfController?.dispose();
+    _imageController.dispose();
     super.dispose();
   }
 
@@ -149,25 +156,60 @@ class _FilePreviewPageState extends State<FilePreviewPage> {
     await widget.onShare(widget.file);
   }
 
+  void _toggleImageZoom() {
+    final currentScale = _imageController.value.getMaxScaleOnAxis();
+    if (currentScale > 1.0) {
+      _imageController.value = Matrix4.identity();
+    } else {
+      _imageController.value = Matrix4.identity()..scale(2.5);
+    }
+  }
+
   Widget _buildPreviewContent(ThemeData theme) {
-    if (_isPdf(widget.file.filePath)) {
+    if (_isPdf(widget.file.filePath) && !_pdfLoadFailed) {
       return Container(
         color: Colors.white,
         child: PdfViewPinch(
           controller: _pdfController!,
           backgroundDecoration: const BoxDecoration(color: Colors.white),
+          onDocumentError: (_) {
+            if (mounted) {
+              setState(() => _pdfLoadFailed = true);
+            }
+          },
+          onPageError: (_, __) {
+            if (mounted) {
+              setState(() => _pdfLoadFailed = true);
+            }
+          },
         ),
       );
     }
 
-    if (_isImage(widget.file.filePath)) {
+    if (_isImage(widget.file.filePath) && !_imageLoadFailed) {
       return Container(
         color: Colors.black,
-        child: PhotoView(
-          backgroundDecoration: const BoxDecoration(color: Colors.black),
-          imageProvider: FileImage(File(widget.file.filePath)),
-          minScale: PhotoViewComputedScale.contained,
-          maxScale: PhotoViewComputedScale.covered * 3,
+        child: Center(
+          child: GestureDetector(
+            onDoubleTap: _toggleImageZoom,
+            child: InteractiveViewer(
+              transformationController: _imageController,
+              minScale: 1,
+              maxScale: 4,
+              child: Image.file(
+                File(widget.file.filePath),
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      setState(() => _imageLoadFailed = true);
+                    }
+                  });
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+          ),
         ),
       );
     }
