@@ -10,6 +10,7 @@ class FileCard extends StatelessWidget {
   final VoidCallback? onShare;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final VoidCallback? onOpen;
 
   final SlidableController slidableController;
   final Object slidableGroupTag;
@@ -27,6 +28,7 @@ class FileCard extends StatelessWidget {
     this.onShare,
     this.onEdit,
     this.onDelete,
+    this.onOpen,
   });
 
   IconData _resolveTypeIcon(String type) {
@@ -141,7 +143,7 @@ class FileCard extends StatelessWidget {
             slidableController.close();
             onAnyTapOutside();
 
-            // OpenFile.open(file.filePath);
+            onOpen?.call();
           },
           child: Container(
             padding: const EdgeInsets.all(14),
