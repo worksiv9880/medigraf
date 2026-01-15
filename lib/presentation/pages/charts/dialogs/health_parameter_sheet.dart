@@ -385,7 +385,7 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                                     ),
                                     const SizedBox(width: 12),
                                     SizedBox(
-                                      width: 120,
+                                      width: 140,
                                       child: TextField(
                                         controller: valueEntry.dateController,
                                         keyboardType: TextInputType.number,
@@ -397,6 +397,10 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                                           hintText: 'dd/mm/yyyy',
                                           hintStyle: TextStyle(
                                             color: Colors.grey.shade400,
+                                          ),
+                                          contentPadding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 12,
                                           ),
                                         ),
                                         onChanged: (value) {
