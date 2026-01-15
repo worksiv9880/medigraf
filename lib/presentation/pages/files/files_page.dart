@@ -255,7 +255,7 @@ class _FilesPageState extends ConsumerState<FilesPage>
       DateFormat('dd.MM').format(file.fileDate),
       DateFormat('yyyy').format(file.fileDate),
       monthFormat.format(file.fileDate),
-      DateFormat('MMM', 'en').format(file.fileDate),
+      file.fileDate.month.toString().padLeft(2, '0'),
     ].join(' ').toLowerCase();
 
     var score = 0.0;
