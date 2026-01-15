@@ -386,6 +386,7 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                                           initialDate: valueEntry.date,
                                           firstDate: DateTime(2020),
                                           lastDate: DateTime.now(),
+                                          locale: const Locale('en', 'GB'),
                                         );
                                         if (picked != null) {
                                           setState(() {
