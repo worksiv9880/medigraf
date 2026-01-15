@@ -17,6 +17,11 @@ class FilesHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final outlineColor = colorScheme.outlineVariant;
+    final surfaceColor = colorScheme.surfaceVariant;
+    final contentColor = colorScheme.onSurfaceVariant;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
@@ -29,22 +34,38 @@ class FilesHeader extends StatelessWidget {
                 onChanged: onSearchChanged,
                 decoration: InputDecoration(
                   hintText: 'Search files',
-                  prefixIcon: const Icon(Icons.search),
+                  hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                    color: contentColor.withOpacity(0.7),
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: contentColor,
+                  ),
                   suffixIcon: value.text.trim().isEmpty
                       ? null
                       : IconButton(
-                          icon: const Icon(Icons.close),
+                          icon: Icon(
+                            Icons.close,
+                            color: contentColor,
+                          ),
                           onPressed: onClearSearch,
                         ),
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: surfaceColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: BorderSide(color: outlineColor),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: BorderSide(color: outlineColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: colorScheme.primary,
+                      width: 1.5,
+                    ),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -60,11 +81,15 @@ class FilesHeader extends StatelessWidget {
             children: [
               OutlinedButton.icon(
                 onPressed: onOpenFilters,
-                icon: const Icon(Icons.filter_list),
+                icon: Icon(
+                  Icons.filter_list,
+                  color: colorScheme.onSurface,
+                ),
                 label: const Text('Filters'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.black87,
-                  side: BorderSide(color: Colors.grey.shade300),
+                  foregroundColor: colorScheme.onSurface,
+                  side: BorderSide(color: outlineColor),
+                  backgroundColor: colorScheme.surface,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 14,
