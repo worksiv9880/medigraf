@@ -37,6 +37,7 @@ class FileUploadForm extends StatefulWidget {
       'REFERRALS',
       'VISIT_NOTES',
       'ADMINISTRATIVE',
+      'RECEIPT',
       'OTHER',
     ],
     this.showActions = true,
@@ -392,6 +393,7 @@ class _FileUploadFormState extends State<FileUploadForm> {
       'REFERRALS': 'Referrals',
       'VISIT_NOTES': 'Visit / Clinical notes',
       'ADMINISTRATIVE': 'Administrative / Insurance',
+      'RECEIPT': 'Receipt',
       'OTHER': 'Other',
     };
 

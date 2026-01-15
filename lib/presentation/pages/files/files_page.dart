@@ -13,6 +13,7 @@ import 'package:medigraf/presentation/widgets/app_header/app_header.dart';
 import 'package:medigraf/presentation/widgets/participant_filter/participant_filter.dart';
 
 import 'dialogs/upload_file_dialog.dart';
+import 'file_preview_page.dart';
 import 'widgets/file_card.dart';
 import 'widgets/files_header.dart';
 
@@ -33,6 +34,7 @@ class _FilesPageState extends ConsumerState<FilesPage>
     'REFERRALS',
     'VISIT_NOTES',
     'ADMINISTRATIVE',
+    'RECEIPT',
     'OTHER',
   ];
 
@@ -138,6 +140,7 @@ class _FilesPageState extends ConsumerState<FilesPage>
       'REFERRALS': 'Referrals',
       'VISIT_NOTES': 'Visit / Clinical notes',
       'ADMINISTRATIVE': 'Administrative / Insurance',
+      'RECEIPT': 'Receipt',
       'OTHER': 'Other',
     };
 
@@ -148,7 +151,7 @@ class _FilesPageState extends ConsumerState<FilesPage>
     return DateFormat('dd.MM.yyyy').format(date);
   }
 
-  Future<void> _editFile(DbFile file) async {
+  Future<bool> _editFile(DbFile file) async {
     final controller = TextEditingController(text: file.title);
     String selectedType = _documentTypes.contains(file.type)
         ? file.type
@@ -231,14 +234,14 @@ class _FilesPageState extends ConsumerState<FilesPage>
       ),
     );
 
-    if (!mounted || shouldSave != true) return;
+    if (!mounted || shouldSave != true) return false;
 
     final updatedTitle = controller.text.trim();
     if (updatedTitle.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Введите название документа')),
       );
-      return;
+      return false;
     }
 
     final success = await _dbFileService.updateFileMetadata(
@@ -248,19 +251,20 @@ class _FilesPageState extends ConsumerState<FilesPage>
       fileDate: selectedDate,
     );
 
-    if (!mounted) return;
+    if (!mounted) return false;
 
     if (!success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Не удалось обновить файл')),
       );
-      return;
+      return false;
     }
 
     setState(_loadFiles);
+    return true;
   }
 
-  Future<void> _deleteFile(DbFile file) async {
+  Future<bool> _deleteFile(DbFile file) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -280,12 +284,30 @@ class _FilesPageState extends ConsumerState<FilesPage>
       ),
     );
 
-    if (!mounted || confirmed != true) return;
+    if (!mounted || confirmed != true) return false;
 
     await _db.deleteFileById(file.id);
 
-    if (!mounted) return;
+    if (!mounted) return false;
 
+    setState(_loadFiles);
+    return true;
+  }
+
+  Future<void> _openFilePreview(DbFile file, Participant? participant) async {
+    final updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => FilePreviewPage(
+          file: file,
+          participant: participant,
+          onShare: _shareFile,
+          onEditMetadata: _editFile,
+          onDelete: _deleteFile,
+        ),
+      ),
+    );
+
+    if (!mounted || updated != true) return;
     setState(_loadFiles);
   }
 
@@ -390,11 +412,15 @@ class _FilesPageState extends ConsumerState<FilesPage>
                             file: file,
                             participant: participantMap[file.participantId],
                             onShare: () => _shareFile(file),
-                            onEdit: () => _editFile(file),
-                            onDelete: () => _deleteFile(file),
+                            onEdit: () async => _editFile(file),
+                            onDelete: () async => _deleteFile(file),
                             slidableController: slidableController,
                             slidableGroupTag: _slidableGroupTag,
                             onAnyTapOutside: _closeAllSlidables,
+                            onOpen: () => _openFilePreview(
+                              file,
+                              participantMap[file.participantId],
+                            ),
                           );
                         },
                       ),
