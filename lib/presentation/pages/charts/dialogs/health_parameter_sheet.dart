@@ -33,9 +33,6 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
     _ValueEntry(
       controller: TextEditingController(),
       date: DateTime.now(),
-      dateController: TextEditingController(
-        text: DateFormat('dd/MM/yyyy').format(DateTime.now()),
-      ),
     ),
   ];
   final _unitController = TextEditingController();
@@ -50,7 +47,6 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
     _customNameController.dispose();
     for (final entry in _valueEntries) {
       entry.controller.dispose();
-      entry.dateController.dispose();
     }
     _unitController.dispose();
     super.dispose();
@@ -457,41 +453,6 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
-                                    SizedBox(
-                                      width: 140,
-                                      child: TextField(
-                                        controller: valueEntry.dateController,
-                                        keyboardType: TextInputType.number,
-                                        inputFormatters: [
-                                          FilteringTextInputFormatter.digitsOnly,
-                                          _DateInputFormatter(),
-                                        ],
-                                        decoration: InputDecoration(
-                                          hintText: 'dd/mm/yyyy',
-                                          hintStyle: TextStyle(
-                                            color: Colors.grey.shade400,
-                                          ),
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 12,
-                                          ),
-                                        ),
-                                        onChanged: (value) {
-                                          if (value.length != 10) return;
-                                          try {
-                                            final parsed = DateFormat('dd/MM/yyyy')
-                                                .parseStrict(value);
-                                            setState(() {
-                                              _valueEntries[index] =
-                                                  valueEntry.copyWith(
-                                                date: parsed,
-                                              );
-                                            });
-                                          } catch (_) {}
-                                        },
-                                      ),
-                                    ),
                                     IconButton(
                                       tooltip: 'Select date',
                                       icon: const Icon(
@@ -507,9 +468,6 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                                                 valueEntry.copyWith(
                                               date: picked,
                                             );
-                                            valueEntry.dateController.text =
-                                                DateFormat('dd/MM/yyyy')
-                                                    .format(picked);
                                           });
                                         }
                                       },
@@ -523,7 +481,6 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                                             final removed =
                                                 _valueEntries.removeAt(index);
                                             removed.controller.dispose();
-                                            removed.dateController.dispose();
                                           });
                                         },
                                       ),
@@ -539,10 +496,6 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                                     _valueEntries.add(
                                       _ValueEntry(
                                         controller: TextEditingController(),
-                                        dateController: TextEditingController(
-                                          text: DateFormat('dd/MM/yyyy')
-                                              .format(DateTime.now()),
-                                        ),
                                         date: DateTime.now(),
                                       ),
                                     );
@@ -627,23 +580,19 @@ class _Section extends StatelessWidget {
 
 class _ValueEntry {
   final TextEditingController controller;
-  final TextEditingController dateController;
   final DateTime date;
 
   const _ValueEntry({
     required this.controller,
-    required this.dateController,
     required this.date,
   });
 
   _ValueEntry copyWith({
     TextEditingController? controller,
-    TextEditingController? dateController,
     DateTime? date,
   }) {
     return _ValueEntry(
       controller: controller ?? this.controller,
-      dateController: dateController ?? this.dateController,
       date: date ?? this.date,
     );
   }
