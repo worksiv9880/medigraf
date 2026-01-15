@@ -1,10 +1,12 @@
 import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart';
 
 enum FileSource { camera, gallery, scanner, filePicker }
 
@@ -29,6 +31,7 @@ class FileMetadata {
 class FileService {
   final ImagePicker _imagePicker = ImagePicker();
   final Uuid _uuid = const Uuid();
+
   static const List<String> _documentExtensions = [
     'pdf',
     'doc',
@@ -62,22 +65,20 @@ class FileService {
 
       if (image == null) return null;
 
-      return await _saveFile(
-        image.path,
-        FileSource.camera,
-      );
-    } catch (e) {
-      print('Error picking from camera: $e');
+      return await _saveFile(image.path, FileSource.camera);
+    } catch (e, s) {
+      debugPrint('Error picking from camera: $e');
+      debugPrintStack(stackTrace: s);
       return null;
     }
   }
 
-  /// Pick image from gallery
+  /// Pick image from gallery (single file picker)
   Future<FileMetadata?> pickFromGallery() async {
     return _pickSingleFile();
   }
 
-  /// Pick a photo from gallery
+  /// Pick a photo from gallery (ImagePicker)
   Future<FileMetadata?> pickPhotoFromGallery() async {
     try {
       final XFile? image = await _imagePicker.pickImage(
@@ -89,12 +90,10 @@ class FileService {
 
       if (image == null) return null;
 
-      return await _saveFile(
-        image.path,
-        FileSource.gallery,
-      );
-    } catch (e) {
-      print('Error picking photo from gallery: $e');
+      return await _saveFile(image.path, FileSource.gallery);
+    } catch (e, s) {
+      debugPrint('Error picking photo from gallery: $e');
+      debugPrintStack(stackTrace: s);
       return null;
     }
   }
@@ -117,19 +116,22 @@ class FileService {
       }
 
       return files;
-    } catch (e) {
-      print('Error picking multiple images: $e');
+    } catch (e, s) {
+      debugPrint('Error picking multiple images: $e');
+      debugPrintStack(stackTrace: s);
       return [];
     }
   }
 
-  /// Pick multiple files
+  /// Pick multiple files via FilePicker
   Future<List<FileMetadata>> pickMultipleFiles() async {
     try {
       final result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         type: FileType.custom,
         allowedExtensions: _documentExtensions,
+        // ⚠️ можно включить, если хочешь надежнее с iCloud/provider:
+        // withData: true,
       );
 
       if (result == null || result.files.isEmpty) return [];
@@ -138,6 +140,7 @@ class FileService {
       for (final picked in result.files) {
         final path = picked.path;
         if (path == null) continue;
+
         final metadata = await _saveFile(path, FileSource.filePicker);
         if (metadata != null) {
           files.add(metadata);
@@ -145,8 +148,9 @@ class FileService {
       }
 
       return files;
-    } catch (e) {
-      print('Error picking multiple files: $e');
+    } catch (e, s) {
+      debugPrint('Error picking multiple files: $e');
+      debugPrintStack(stackTrace: s);
       return [];
     }
   }
@@ -154,9 +158,8 @@ class FileService {
   /// Scan document using camera
   Future<List<FileMetadata>> scanDocument() async {
     try {
-      final List<String>? scannedPaths = await CunningDocumentScanner.getPictures(
-        noOfPages: 5,
-      );
+      final List<String>? scannedPaths =
+          await CunningDocumentScanner.getPictures(noOfPages: 5);
 
       if (scannedPaths == null || scannedPaths.isEmpty) {
         return [];
@@ -171,8 +174,9 @@ class FileService {
       }
 
       return files;
-    } catch (e) {
-      print('Error scanning document: $e');
+    } catch (e, s) {
+      debugPrint('Error scanning document: $e');
+      debugPrintStack(stackTrace: s);
       return [];
     }
   }
@@ -183,41 +187,70 @@ class FileService {
         allowMultiple: false,
         type: FileType.custom,
         allowedExtensions: _documentExtensions,
+        // withData: true,
       );
 
       if (result == null || result.files.isEmpty) return null;
       final picked = result.files.single;
       if (picked.path == null) return null;
 
-      return await _saveFile(
-        picked.path!,
-        FileSource.filePicker,
-      );
-    } catch (e) {
-      print('Error picking file: $e');
+      return await _saveFile(picked.path!, FileSource.filePicker);
+    } catch (e, s) {
+      debugPrint('Error picking file: $e');
+      debugPrintStack(stackTrace: s);
       return null;
     }
   }
 
-  /// Save file to app directory
+  /// Save file to app Documents/media directory (robust)
+  ///
+  /// ✅ never returns metadata unless the destination file реально существует
+  /// ✅ проверяет существование источника и результата копирования
   Future<FileMetadata?> _saveFile(String sourcePath, FileSource source) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
-      final mediaDir = Directory('${directory.path}/media');
-      
-      if (!await mediaDir.exists()) {
-        await mediaDir.create(recursive: true);
+      final mediaDir = Directory(p.join(directory.path, 'media'));
+      await mediaDir.create(recursive: true);
+
+      final sourceFile = File(sourcePath);
+
+      final srcExists = await sourceFile.exists();
+      if (!srcExists) {
+        debugPrint('SAVE FAIL: source not found: $sourcePath');
+        return null;
       }
 
-      final File sourceFile = File(sourcePath);
-      final String extension = p.extension(sourcePath);
-      final String fileId = _uuid.v4();
-      final String fileName = '$fileId$extension';
-      final String targetPath = '${mediaDir.path}/$fileName';
+      // Иногда файл есть, но пустой/недоступен (provider)
+      final srcSize = await sourceFile.length();
+      if (srcSize == 0) {
+        debugPrint('SAVE FAIL: source file size is 0: $sourcePath');
+        return null;
+      }
 
-      await sourceFile.copy(targetPath);
+      final extension = p.extension(sourcePath);
+      final fileId = _uuid.v4();
+      final fileName = '$fileId$extension';
+      final targetPath = p.join(mediaDir.path, fileName);
 
-      final fileSize = await File(targetPath).length();
+      // Важно: await обязательно
+      final copiedFile = await sourceFile.copy(targetPath);
+
+      final dstExists = await copiedFile.exists();
+      final dstSize = dstExists ? await copiedFile.length() : 0;
+
+      if (!dstExists || dstSize == 0) {
+        debugPrint('SAVE FAIL: destination missing/empty: $targetPath');
+        try {
+          if (await copiedFile.exists()) {
+            await copiedFile.delete();
+          }
+        } catch (_) {}
+        return null;
+      }
+
+      debugPrint(
+        'SAVE OK: src=$sourcePath ($srcSize B) -> dst=$targetPath ($dstSize B)',
+      );
 
       return FileMetadata(
         id: fileId,
@@ -225,10 +258,11 @@ class FileService {
         fileName: fileName,
         source: source,
         createdAt: DateTime.now(),
-        fileSize: fileSize,
+        fileSize: dstSize,
       );
-    } catch (e) {
-      print('Error saving file: $e');
+    } catch (e, s) {
+      debugPrint('Error saving file: $e');
+      debugPrintStack(stackTrace: s);
       return null;
     }
   }
@@ -242,8 +276,9 @@ class FileService {
         return true;
       }
       return false;
-    } catch (e) {
-      print('Error deleting file: $e');
+    } catch (e, s) {
+      debugPrint('Error deleting file: $e');
+      debugPrintStack(stackTrace: s);
       return false;
     }
   }
@@ -256,8 +291,9 @@ class FileService {
         return await file.length();
       }
       return null;
-    } catch (e) {
-      print('Error getting file size: $e');
+    } catch (e, s) {
+      debugPrint('Error getting file size: $e');
+      debugPrintStack(stackTrace: s);
       return null;
     }
   }
@@ -266,7 +302,7 @@ class FileService {
   Future<bool> fileExists(String path) async {
     try {
       return await File(path).exists();
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }

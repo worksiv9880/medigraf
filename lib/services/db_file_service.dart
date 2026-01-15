@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import '../../data/datasources/local/app_database.dart';
 import 'file_service.dart';
@@ -15,7 +17,9 @@ class DbFileService {
     DateTime? fileDate,
   }) async {
     final file = await fileService.pickFromCamera();
-    if (file == null) return;
+    if (file == null) {
+      throw Exception('Не удалось сохранить файл (camera)');
+    }
 
     await addFileWithMetadata(
       participantId: participantId,
@@ -33,7 +37,9 @@ class DbFileService {
     DateTime? fileDate,
   }) async {
     final file = await fileService.pickFromGallery();
-    if (file == null || participantId == null) return;
+    if (file == null || participantId == null) {
+      throw Exception('Не удалось сохранить файл (gallery)');
+    }
 
     await addFileWithMetadata(
       participantId: participantId,
@@ -51,6 +57,9 @@ class DbFileService {
     DateTime? fileDate,
   }) async {
     final files = await fileService.scanDocument();
+    if (files.isEmpty) {
+      throw Exception('Не удалось сохранить файл (scanner)');
+    }
 
     for (final file in files) {
       await addFileWithMetadata(
@@ -63,6 +72,7 @@ class DbFileService {
     }
   }
 
+  /// ✅ Гарантирует: если запись добавлена в БД, файл реально существует.
   Future<void> addFileWithMetadata({
     required int participantId,
     required String title,
@@ -70,11 +80,20 @@ class DbFileService {
     required FileMetadata file,
     DateTime? fileDate,
   }) async {
+    // 1) Проверяем существование физического файла
+    final exists = await File(file.path).exists();
+    final size = exists ? await File(file.path).length() : 0;
+
+    if (!exists || size == 0) {
+      throw Exception('Файл не сохранён на диске: ${file.path}');
+    }
+
+    // 2) Сохраняем в БД
     await _saveToDb(
       participantId: participantId,
       title: title,
       type: type,
-      file: file,
+      file: file.copyWith(fileSize: size),
       fileDate: fileDate,
     );
   }
@@ -121,5 +140,18 @@ class DbFileService {
       fileDate: fileDate,
     );
     return updated > 0;
+  }
+}
+
+extension on FileMetadata {
+  FileMetadata copyWith({int? fileSize}) {
+    return FileMetadata(
+      id: id,
+      path: path,
+      fileName: fileName,
+      source: source,
+      createdAt: createdAt,
+      fileSize: fileSize ?? this.fileSize,
+    );
   }
 }
