@@ -93,6 +93,80 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
     }
   }
 
+  Future<DateTime?> _pickDate(DateTime initialDate) {
+    final formatter = DateFormat('dd/MM/yyyy');
+    var selectedDate = initialDate;
+    final controller = TextEditingController(text: formatter.format(initialDate));
+
+    return showDialog<DateTime>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select date'),
+          content: StatefulBuilder(
+            builder: (context, setDialogState) {
+              return SizedBox(
+                width: 320,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CalendarDatePicker(
+                      initialDate: selectedDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                      onDateChanged: (date) {
+                        setDialogState(() {
+                          selectedDate = date;
+                          controller.text = formatter.format(date);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: controller,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        _DateInputFormatter(),
+                      ],
+                      decoration: const InputDecoration(
+                        labelText: 'Enter date',
+                        hintText: 'dd/mm/yyyy',
+                      ),
+                      onChanged: (value) {
+                        if (value.length != 10) return;
+                        try {
+                          final parsed = formatter.parseStrict(value);
+                          if (parsed.isBefore(DateTime(2020)) ||
+                              parsed.isAfter(DateTime.now())) {
+                            return;
+                          }
+                          setDialogState(() {
+                            selectedDate = parsed;
+                          });
+                        } catch (_) {}
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(selectedDate),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _save() async {
     final participant = _selectedParticipant;
     if (participant == null) {
@@ -425,13 +499,8 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                                         size: 18,
                                       ),
                                       onPressed: () async {
-                                        final picked = await showDatePicker(
-                                          context: context,
-                                          initialDate: valueEntry.date,
-                                          firstDate: DateTime(2020),
-                                          lastDate: DateTime.now(),
-                                          locale: const Locale('en', 'GB'),
-                                        );
+                                        final picked =
+                                            await _pickDate(valueEntry.date);
                                         if (picked != null) {
                                           setState(() {
                                             _valueEntries[index] =
