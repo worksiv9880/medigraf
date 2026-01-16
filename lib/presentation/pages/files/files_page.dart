@@ -345,7 +345,7 @@ class _FilesPageState extends ConsumerState<FilesPage>
             ),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                const topPadding = 48.0;
+                const topPadding = 64.0;
                 return SafeArea(
                   top: true,
                   bottom: false,
@@ -353,136 +353,144 @@ class _FilesPageState extends ConsumerState<FilesPage>
                     height: constraints.maxHeight,
                     child: Column(
                       children: [
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(
-                            24,
-                            topPadding,
-                            24,
-                            16,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: topPadding),
+                            child: SingleChildScrollView(
+                              padding:
+                                  const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Expanded(
-                                    child: Text(
-                                      'Filters',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w600,
+                                  Row(
+                                    children: [
+                                      const Expanded(
+                                        child: Text(
+                                          'Filters',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                       ),
+                                      IconButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(),
+                                        icon: const Icon(Icons.close),
+                                        tooltip: 'Close',
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'Document type',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w600),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ..._documentTypes.map(
+                                    (type) => CheckboxListTile(
+                                      value: tempSelectedTypes.contains(type),
+                                      onChanged: (value) {
+                                        setModalState(() {
+                                          if (value == true) {
+                                            tempSelectedTypes.add(type);
+                                          } else {
+                                            tempSelectedTypes.remove(type);
+                                          }
+                                        });
+                                      },
+                                      title: Text(_formatType(type)),
+                                      controlAffinity:
+                                          ListTileControlAffinity.leading,
+                                      contentPadding: EdgeInsets.zero,
                                     ),
                                   ),
-                                  IconButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(),
-                                    icon: const Icon(Icons.close),
-                                    tooltip: 'Close',
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'Date range',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w600),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ..._DateFilter.values.map(
+                                    (filter) => RadioListTile<_DateFilter>(
+                                      value: filter,
+                                      groupValue: tempDateFilter,
+                                      onChanged: (value) {
+                                        if (value == null) return;
+                                        setModalState(
+                                          () => tempDateFilter = value,
+                                        );
+                                      },
+                                      title: Text(_dateFilterLabel(filter)),
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
+                                  ),
+                                  if (tempDateFilter == _DateFilter.custom) ...[
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: OutlinedButton(
+                                            onPressed: () => pickDate(
+                                              isFrom: true,
+                                              initialDate: tempFromDate ??
+                                                  DateTime.now(),
+                                            ),
+                                            child: Text(
+                                              tempFromDate == null
+                                                  ? 'From'
+                                                  : _formatDate(
+                                                      tempFromDate!,
+                                                    ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: OutlinedButton(
+                                            onPressed: () => pickDate(
+                                              isFrom: false,
+                                              initialDate: tempToDate ??
+                                                  DateTime.now(),
+                                            ),
+                                            child: Text(
+                                              tempToDate == null
+                                                  ? 'To'
+                                                  : _formatDate(tempToDate!),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'Sort',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w600),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ..._SortOption.values.map(
+                                    (option) => RadioListTile<_SortOption>(
+                                      value: option,
+                                      groupValue: tempSortOption,
+                                      onChanged: (value) {
+                                        if (value == null) return;
+                                        setModalState(
+                                          () => tempSortOption = value,
+                                        );
+                                      },
+                                      title: Text(_sortOptionLabel(option)),
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'Document type',
-                                style: TextStyle(fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 8),
-                              ..._documentTypes.map(
-                                (type) => CheckboxListTile(
-                                  value: tempSelectedTypes.contains(type),
-                                  onChanged: (value) {
-                                    setModalState(() {
-                                      if (value == true) {
-                                        tempSelectedTypes.add(type);
-                                      } else {
-                                        tempSelectedTypes.remove(type);
-                                      }
-                                    });
-                                  },
-                                  title: Text(_formatType(type)),
-                                  controlAffinity:
-                                      ListTileControlAffinity.leading,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'Date range',
-                                style: TextStyle(fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 8),
-                              ..._DateFilter.values.map(
-                                (filter) => RadioListTile<_DateFilter>(
-                                  value: filter,
-                                  groupValue: tempDateFilter,
-                                  onChanged: (value) {
-                                    if (value == null) return;
-                                    setModalState(() => tempDateFilter = value);
-                                  },
-                                  title: Text(_dateFilterLabel(filter)),
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                              ),
-                              if (tempDateFilter == _DateFilter.custom) ...[
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton(
-                                        onPressed: () => pickDate(
-                                          isFrom: true,
-                                          initialDate:
-                                              tempFromDate ?? DateTime.now(),
-                                        ),
-                                        child: Text(
-                                          tempFromDate == null
-                                              ? 'From'
-                                              : _formatDate(tempFromDate!),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: OutlinedButton(
-                                        onPressed: () => pickDate(
-                                          isFrom: false,
-                                          initialDate:
-                                              tempToDate ?? DateTime.now(),
-                                        ),
-                                        child: Text(
-                                          tempToDate == null
-                                              ? 'To'
-                                              : _formatDate(tempToDate!),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                              const SizedBox(height: 16),
-                              const Text(
-                                'Sort',
-                                style: TextStyle(fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 8),
-                              ..._SortOption.values.map(
-                                (option) => RadioListTile<_SortOption>(
-                                  value: option,
-                                  groupValue: tempSortOption,
-                                  onChanged: (value) {
-                                    if (value == null) return;
-                                    setModalState(() => tempSortOption = value);
-                                  },
-                                  title: Text(_sortOptionLabel(option)),
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                           child: Row(
