@@ -343,11 +343,19 @@ class _FilesPageState extends ConsumerState<FilesPage>
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child: SafeArea(
+              top: false,
+              child: LayoutBuilder(
+                builder: (context, constraints) => SizedBox(
+                  height: constraints.maxHeight,
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                   Row(
                     children: [
                       const Expanded(
@@ -459,37 +467,45 @@ class _FilesPageState extends ConsumerState<FilesPage>
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: resetFilters,
-                          child: const Text('Reset'),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () {
-                            setState(() {
-                              _selectedTypes = tempSelectedTypes;
-                              _dateFilter = tempDateFilter;
-                              _customFromDate = tempFromDate;
-                              _customToDate = tempToDate;
-                              _sortOption = tempSortOption;
-                            });
-                            Navigator.of(context).pop();
-                          },
-                          style: FilledButton.styleFrom(
-                            backgroundColor: theme.colorScheme.primary,
-                          ),
-                          child: const Text('Apply'),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: resetFilters,
+                                child: const Text('Reset'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FilledButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedTypes = tempSelectedTypes;
+                                    _dateFilter = tempDateFilter;
+                                    _customFromDate = tempFromDate;
+                                    _customToDate = tempToDate;
+                                    _sortOption = tempSortOption;
+                                  });
+                                  Navigator.of(context).pop();
+                                },
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: theme.colorScheme.primary,
+                                ),
+                                child: const Text('Apply'),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           );
