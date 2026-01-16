@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -188,150 +186,148 @@ class MetricChart extends ConsumerWidget {
     final dateFormatter = DateFormat('dd/MM/yyyy');
     final unitLabel = unit.trim().isEmpty ? '' : ' ${unit.trim()}';
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final minWidth = constraints.maxWidth;
-        final chartWidth =
-            math.max(minWidth, orderedDates.length * 56.0);
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: chartWidth,
-            child: LineChart(
-              LineChartData(
-                minX: minX,
-                maxX: maxX,
-                minY: minChartY,
-                maxY: maxChartY,
-                borderData: FlBorderData(
+    return LineChart(
+      LineChartData(
+        minX: minX,
+        maxX: maxX,
+        minY: minChartY,
+        maxY: maxChartY,
+        borderData: FlBorderData(
+          show: true,
+          border: Border.all(
+            color: borderColor,
+            width: 1,
+          ),
+        ),
+        gridData: grid.toGridData(),
+        lineTouchData: LineTouchData(
+          handleBuiltInTouches: true,
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((spot) {
+                final index = spot.x.toInt();
+                final date = index >= 0 && index < orderedDates.length
+                    ? orderedDates[index]
+                    : null;
+                final dateLabel =
+                    date == null ? '' : dateFormatter.format(date);
+                return LineTooltipItem(
+                  '$dateLabel\n${spot.y.toStringAsFixed(1)}$unitLabel',
+                  TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                );
+              }).toList();
+            },
+          ),
+          getTouchedSpotIndicator: (barData, spotIndexes) {
+            return spotIndexes.map((index) {
+              final indicatorColor = (barData.color ?? axisLabelColor)
+                  .withValues(alpha: 0.4);
+              return TouchedSpotIndicatorData(
+                FlLine(color: indicatorColor, strokeWidth: 1),
+                FlDotData(
                   show: true,
-                  border: Border.all(
-                    color: borderColor,
-                    width: 1,
-                  ),
-                ),
-                gridData: grid.toGridData(),
-                lineTouchData: LineTouchData(
-                  handleBuiltInTouches: true,
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipItems: (touchedSpots) {
-                      return touchedSpots.map((spot) {
-                        final index = spot.x.toInt();
-                        final date = index >= 0 && index < orderedDates.length
-                            ? orderedDates[index]
-                            : null;
-                        final dateLabel =
-                            date == null ? '' : dateFormatter.format(date);
-                        return LineTooltipItem(
-                          '$dateLabel\n${spot.y.toStringAsFixed(1)}$unitLabel',
-                          TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        );
-                      }).toList();
-                    },
-                  ),
-                  getTouchedSpotIndicator: (barData, spotIndexes) {
-                    return spotIndexes.map((index) {
-                      final indicatorColor = (barData.color ?? axisLabelColor)
-                          .withValues(alpha: 0.4);
-                      return TouchedSpotIndicatorData(
-                        FlLine(color: indicatorColor, strokeWidth: 1),
-                        FlDotData(
-                          show: true,
-                          getDotPainter: (spot, percent, bar, index) {
-                            return FlDotCirclePainter(
-                              radius: 4,
-                              color: barData.color ?? axisLabelColor,
-                              strokeWidth: 2,
-                              strokeColor: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
-                            );
-                          },
-                        ),
-                      );
-                    }).toList();
+                  getDotPainter: (spot, percent, bar, index) {
+                    return FlDotCirclePainter(
+                      radius: 4,
+                      color: barData.color ?? axisLabelColor,
+                      strokeWidth: 2,
+                      strokeColor: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest,
+                    );
                   },
                 ),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 48,
-                      interval: yInterval,
-                      getTitlesWidget: (value, meta) {
-                        final displayValue = value % 1 == 0
-                            ? value.toInt().toString()
-                            : value.toStringAsFixed(1);
-                        return Text(
-                          displayValue,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: axisLabelColor,
-                          ),
-                        );
-                      },
-                    ),
+              );
+            }).toList();
+          },
+        ),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 48,
+              interval: yInterval,
+              getTitlesWidget: (value, meta) {
+                final displayValue = value % 1 == 0
+                    ? value.toInt().toString()
+                    : value.toStringAsFixed(1);
+                return Text(
+                  displayValue,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: axisLabelColor,
                   ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 1,
-                      reservedSize: 44,
-                      getTitlesWidget: (value, meta) {
-                        final index = value.toInt();
-                        if (index < 0 || index >= orderedDates.length) {
-                          return const SizedBox.shrink();
-                        }
-                        if (labelStep > 1 &&
-                            index % labelStep != 0 &&
-                            index != orderedDates.length - 1) {
-                          return const SizedBox.shrink();
-                        }
-                        final dateLabel =
-                            dateFormatter.format(orderedDates[index]);
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Transform.rotate(
-                            angle: -0.6,
-                            child: Text(
-                              dateLabel,
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: axisLabelColor,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                lineBarsData: updatedSeries
-                    .map(
-                      (entry) => LineChartBarData(
-                        spots: entry.spots,
-                        isCurved: true,
-                        color: entry.color,
-                        barWidth: 3,
-                        dotData: const FlDotData(show: false),
-                      ),
-                    )
-                    .toList(),
-              ),
+                );
+              },
             ),
           ),
-        );
-      },
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: 1,
+              reservedSize: 44,
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index < 0 || index >= orderedDates.length) {
+                  return const SizedBox.shrink();
+                }
+                if (labelStep > 1 &&
+                    index % labelStep != 0 &&
+                    index != orderedDates.length - 1) {
+                  return const SizedBox.shrink();
+                }
+                final dateLabel = dateFormatter.format(orderedDates[index]);
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Transform.rotate(
+                    angle: -0.6,
+                    child: Text(
+                      dateLabel,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: axisLabelColor,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        lineBarsData: updatedSeries
+            .map(
+              (entry) => LineChartBarData(
+                spots: entry.spots,
+                isCurved: true,
+                color: entry.color,
+                barWidth: 3,
+                dotData: FlDotData(
+                  show: true,
+                  getDotPainter: (spot, percent, bar, index) {
+                    return FlDotCirclePainter(
+                      radius: 3.5,
+                      color: entry.color,
+                      strokeWidth: 1.5,
+                      strokeColor: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest,
+                    );
+                  },
+                ),
+              ),
+            )
+            .toList(),
+      ),
     );
   }
 }
