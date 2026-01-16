@@ -343,16 +343,19 @@ class _FilesPageState extends ConsumerState<FilesPage>
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
-            child: SafeArea(
-              top: true,
-              child: LayoutBuilder(
-                builder: (context, constraints) => SizedBox(
+            child: LayoutBuilder(
+              builder: (context, constraints) => SizedBox(
                   height: constraints.maxHeight,
                   child: Column(
                     children: [
                       Expanded(
                         child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(24, 40, 24, 16),
+                          padding: EdgeInsets.fromLTRB(
+                            24,
+                            MediaQuery.of(context).padding.top + 32,
+                            24,
+                            16,
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
