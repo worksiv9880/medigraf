@@ -95,7 +95,7 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
   Future<DateTime?> _pickDate(DateTime initialDate) {
     final formatter = DateFormat('dd/MM/yyyy');
     var selectedDate = initialDate;
-    final controller = TextEditingController(text: formatter.format(initialDate));
+    final controller = TextEditingController();
 
     return showDialog<DateTime>(
       context: context,
@@ -123,15 +123,13 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: controller,
+                      autofocus: true,
                       keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
                         _DateInputFormatter(),
                       ],
-                      decoration: const InputDecoration(
-                        labelText: 'Enter date',
-                        hintText: 'dd/mm/yyyy',
-                      ),
+                      decoration: const InputDecoration(hintText: 'dd/mm/yyyy'),
                       onChanged: (value) {
                         if (value.length != 10) return;
                         try {

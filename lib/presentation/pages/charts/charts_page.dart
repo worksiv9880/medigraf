@@ -349,24 +349,35 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
                             ),
                           ),
                         ),
-                        Flexible(
-                          child: Wrap(
-                            spacing: 4,
-                            runSpacing: 4,
-                            children: ChartRange.values
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SegmentedButton<ChartRange>(
+                            segments: ChartRange.values
                                 .map(
-                                  (option) => ChoiceChip(
+                                  (option) => ButtonSegment(
+                                    value: option,
                                     label: Text(option.label),
-                                    selected: range == option,
-                                    onSelected: (_) {
-                                      setState(() {
-                                        _rangeByParameter[parameter] = option;
-                                      });
-                                    },
-                                    visualDensity: VisualDensity.compact,
                                   ),
                                 )
                                 .toList(),
+                            selected: {range},
+                            onSelectionChanged: (selection) {
+                              setState(() {
+                                _rangeByParameter[parameter] =
+                                    selection.first;
+                              });
+                            },
+                            showSelectedIcon: false,
+                            style: ButtonStyle(
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
+                              padding: WidgetStateProperty.all(
+                                const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                         IconButton(
