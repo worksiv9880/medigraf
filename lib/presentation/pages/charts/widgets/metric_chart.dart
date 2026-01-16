@@ -203,7 +203,7 @@ class MetricChart extends ConsumerWidget {
         lineTouchData: LineTouchData(
           handleBuiltInTouches: true,
           touchTooltipData: LineTouchTooltipData(
-            tooltipBackgroundColor: Theme.of(context).colorScheme.surface,
+            tooltipBgColor: Theme.of(context).colorScheme.surface,
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
                 final index = spot.x.toInt();
