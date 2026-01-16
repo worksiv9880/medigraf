@@ -55,14 +55,14 @@ class MetricChart extends ConsumerWidget {
     double? maxY;
     DateTime? latestDate;
 
-    DateTime _truncateDate(DateTime date) {
+    DateTime truncateDate(DateTime date) {
       return DateTime(date.year, date.month, date.day);
     }
 
-    DateTime? _rangeStart() {
+    DateTime? calculateRangeStart() {
       final rangeDays = range.days;
       if (rangeDays == null || latestDate == null) return null;
-      final latestDay = _truncateDate(latestDate!);
+      final latestDay = truncateDate(latestDate);
       return latestDay.subtract(Duration(days: rangeDays - 1));
     }
 
@@ -75,15 +75,13 @@ class MetricChart extends ConsumerWidget {
       if (participantIndex == -1 || points.isEmpty) continue;
 
       for (final point in points) {
-        latestDate = latestDate == null
-            ? point.recordedAt
-            : (point.recordedAt.isAfter(latestDate!)
-                ? point.recordedAt
-                : latestDate);
+        if (latestDate == null || point.recordedAt.isAfter(latestDate)) {
+          latestDate = point.recordedAt;
+        }
       }
     }
 
-    final rangeStart = _rangeStart();
+    final rangeStart = calculateRangeStart();
 
     for (var index = 0; index < metrics.length; index++) {
       final metricModel = metrics[index];
@@ -95,10 +93,10 @@ class MetricChart extends ConsumerWidget {
 
       for (final point in points) {
         if (rangeStart != null) {
-          final day = _truncateDate(point.recordedAt);
+          final day = truncateDate(point.recordedAt);
           if (day.isBefore(rangeStart)) continue;
         }
-        final day = _truncateDate(point.recordedAt);
+        final day = truncateDate(point.recordedAt);
         if (!dateIndex.containsKey(day)) {
           dateIndex[day] = orderedDates.length;
           orderedDates.add(day);
@@ -128,11 +126,11 @@ class MetricChart extends ConsumerWidget {
       final spots = points
           .where((point) {
             if (rangeStart == null) return true;
-            final day = _truncateDate(point.recordedAt);
+            final day = truncateDate(point.recordedAt);
             return day.isAtSameMomentAs(rangeStart) || day.isAfter(rangeStart);
           })
           .map((point) {
-            final day = _truncateDate(point.recordedAt);
+            final day = truncateDate(point.recordedAt);
             final x = dateIndex[day];
             if (x == null) return null;
             minY = minY == null
@@ -205,7 +203,7 @@ class MetricChart extends ConsumerWidget {
         lineTouchData: LineTouchData(
           handleBuiltInTouches: true,
           touchTooltipData: LineTouchTooltipData(
-            tooltipBgColor: Theme.of(context).colorScheme.surface,
+            tooltipBackgroundColor: Theme.of(context).colorScheme.surface,
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
                 final index = spot.x.toInt();
@@ -227,8 +225,8 @@ class MetricChart extends ConsumerWidget {
           ),
           getTouchedSpotIndicator: (barData, spotIndexes) {
             return spotIndexes.map((index) {
-              final indicatorColor =
-                  (barData.color ?? axisLabelColor).withOpacity(0.4);
+              final indicatorColor = (barData.color ?? axisLabelColor)
+                  .withValues(alpha: 0.4);
               return TouchedSpotIndicatorData(
                 FlLine(color: indicatorColor, strokeWidth: 1),
                 FlDotData(
