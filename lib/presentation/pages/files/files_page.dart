@@ -356,23 +356,12 @@ class _FilesPageState extends ConsumerState<FilesPage>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Filters',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      if (_hasActiveFilters)
-                        TextButton(
-                          onPressed: resetFilters,
-                          child: const Text('Clear filters'),
-                        ),
-                    ],
+                  const Text(
+                    'Filters',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
