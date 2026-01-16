@@ -352,7 +352,7 @@ class _FilesPageState extends ConsumerState<FilesPage>
                     children: [
                       Expanded(
                         child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                          padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
