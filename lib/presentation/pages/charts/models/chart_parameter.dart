@@ -4,13 +4,16 @@ class ChartParameter {
 
   const ChartParameter({required this.name, required this.unit});
 
+  String get normalizedName => name.trim().toLowerCase();
+  String get normalizedUnit => unit.trim().toLowerCase();
+
   @override
   bool operator ==(Object other) {
     return other is ChartParameter &&
-        other.name.toLowerCase() == name.toLowerCase() &&
-        other.unit.toLowerCase() == unit.toLowerCase();
+        other.normalizedName == normalizedName &&
+        other.normalizedUnit == normalizedUnit;
   }
 
   @override
-  int get hashCode => Object.hash(name.toLowerCase(), unit.toLowerCase());
+  int get hashCode => Object.hash(normalizedName, normalizedUnit);
 }
