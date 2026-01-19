@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,6 +11,7 @@ import '../../widgets/participant_filter/participant_filter.dart';
 import 'models/chart_parameter.dart';
 import '../../../data/datasources/local/app_database.dart';
 import 'utils/chart_colors.dart';
+import 'utils/chart_helpers.dart';
 
 class ChartsPage extends ConsumerWidget {
   const ChartsPage({super.key});
@@ -76,6 +78,8 @@ class _MetricsBody extends ConsumerStatefulWidget {
 }
 
 class _MetricsBodyState extends ConsumerState<_MetricsBody> {
+  final Map<ChartParameter, ChartRange> _rangeByParameter = {};
+
   Future<void> _confirmDeleteChart({
     required BuildContext context,
     required List<Metric> metrics,
@@ -153,12 +157,42 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
                             await db.deleteDataPoint(point.id);
                             final remaining =
                                 await db.getDataPointsForMetric(metric.id);
-                            if (remaining.isEmpty && mounted) {
-                              await db.deleteMetric(metric.id);
-                              if (context.mounted) {
-                                Navigator.pop(context);
+                            final shouldDeleteMetric = remaining.isEmpty;
+                            if (!context.mounted) return;
+                            final messenger = ScaffoldMessenger.of(context);
+                            messenger.clearSnackBars();
+                            messenger
+                                .showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Value deleted'),
+                                    action: SnackBarAction(
+                                      label: 'Undo',
+                                      onPressed: () async {
+                                        await db.addDataPoint(
+                                          MetricDataPointsCompanion(
+                                            metricId:
+                                                drift.Value(metric.id),
+                                            value: drift.Value(point.value),
+                                            recordedAt:
+                                                drift.Value(point.recordedAt),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                )
+                                .closed
+                                .then((reason) async {
+                              if (reason == SnackBarClosedReason.action) {
+                                return;
                               }
-                            }
+                              if (shouldDeleteMetric) {
+                                await db.deleteMetric(metric.id);
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                }
+                              }
+                            });
                           },
                         ),
                       );
@@ -187,6 +221,7 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
     required Metric metric,
     required int colorIndex,
   }) {
+    final textStyle = Theme.of(context).textTheme.bodySmall;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -201,11 +236,11 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
         const SizedBox(width: 6),
         Text(
           '${participant.emoji} ${participant.name}',
-          style: const TextStyle(fontSize: 12),
+          style: textStyle,
         ),
         IconButton(
-          tooltip: 'Delete metric',
-          icon: const Icon(Icons.delete_outline, size: 18),
+          tooltip: 'Manage values',
+          icon: const Icon(Icons.tune, size: 18),
           onPressed: () => _showMetricPointsDialog(
             context: context,
             metric: metric,
@@ -243,7 +278,7 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
     final metrics = metricsAsyncList
         .expand((value) => value.value ?? <Metric>[])
         .toList();
-    final parameters = _buildParameters(metrics);
+    final parameters = buildParameters(metrics);
 
     return participantsAsync.when(
       data: (participants) {
@@ -259,18 +294,19 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
         }
 
         return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
           itemCount: parameters.length,
           separatorBuilder: (_, __) => const SizedBox(height: 16),
           itemBuilder: (context, index) {
             final parameter = parameters[index];
+            final range = _rangeByParameter[parameter] ?? ChartRange.all;
             final selectedMetrics = metrics
                 .where(
                   (metric) =>
-                      metric.name.toLowerCase() ==
-                          parameter.name.toLowerCase() &&
-                      metric.unit.toLowerCase() ==
-                          parameter.unit.toLowerCase(),
+                      metric.name.trim().toLowerCase() ==
+                          parameter.normalizedName &&
+                      metric.unit.trim().toLowerCase() ==
+                          parameter.normalizedUnit,
                 )
                 .toList();
             final participantMetricRows = selectedMetrics
@@ -288,6 +324,9 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
                 .whereType<Widget>()
                 .toList();
 
+            final cardHeight = (MediaQuery.sizeOf(context).height * 0.35)
+                .clamp(260.0, 420.0);
+
             return Card(
               elevation: 0,
               color: Theme.of(context).cardColor,
@@ -295,7 +334,7 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -307,6 +346,37 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SegmentedButton<ChartRange>(
+                            segments: ChartRange.values
+                                .map(
+                                  (option) => ButtonSegment(
+                                    value: option,
+                                    label: Text(option.label),
+                                  ),
+                                )
+                                .toList(),
+                            selected: {range},
+                            onSelectionChanged: (selection) {
+                              setState(() {
+                                _rangeByParameter[parameter] =
+                                    selection.first;
+                              });
+                            },
+                            showSelectedIcon: false,
+                            style: ButtonStyle(
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
+                              padding: WidgetStateProperty.all(
+                                const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -322,10 +392,12 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
-                      height: 240,
+                      height: cardHeight,
                       child: MetricChart(
                         metrics: selectedMetrics,
                         participants: selectedParticipantDetails,
+                        unit: parameter.unit,
+                        range: range,
                       ),
                     ),
                     if (participantMetricRows.isNotEmpty) ...[
@@ -347,15 +419,4 @@ class _MetricsBodyState extends ConsumerState<_MetricsBody> {
       error: (e, _) => Center(child: Text('Error: $e')),
     );
   }
-}
-
-List<ChartParameter> _buildParameters(List<Metric> metrics) {
-  final parameters = <ChartParameter>{};
-
-  for (final metric in metrics) {
-    parameters.add(ChartParameter(name: metric.name, unit: metric.unit));
-  }
-
-  return parameters.toList()
-    ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 }

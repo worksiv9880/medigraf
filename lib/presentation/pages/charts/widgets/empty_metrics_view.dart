@@ -7,13 +7,21 @@ class EmptyMetricsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.show_chart, size: 80, color: Colors.grey.shade400),
+          Icon(
+            Icons.show_chart,
+            size: 80,
+            color: colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(height: 16),
-          const Text('No metrics yet'),
+          Text(
+            'No metrics yet',
+            style: TextStyle(color: colorScheme.onSurfaceVariant),
+          ),
           const SizedBox(height: 8),
           FilledButton.icon(
             onPressed: onAddParameter,

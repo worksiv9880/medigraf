@@ -1,10 +1,13 @@
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/di/providers.dart';
 import '../../../../data/datasources/local/app_database.dart';
 import '../models/chart_parameter.dart';
+import '../utils/chart_helpers.dart';
 
 enum _ParameterMode { custom, existing }
 
@@ -28,14 +31,19 @@ class _HealthParameterSheet extends ConsumerStatefulWidget {
 class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
   final _customNameController = TextEditingController();
   final List<_ValueEntry> _valueEntries = [
-    _ValueEntry(controller: TextEditingController(), date: DateTime.now()),
+    _ValueEntry(
+      controller: TextEditingController(),
+      date: DateTime.now(),
+    ),
   ];
   final _unitController = TextEditingController();
+  final _valueInputFormatter = _DecimalInputFormatter();
 
   _ParameterMode _mode = _ParameterMode.custom;
   Participant? _selectedParticipant;
   ChartParameter? _selectedParameter;
   bool _isSaving = false;
+  List<Metric> _cachedMetrics = [];
 
   @override
   void dispose() {
@@ -84,6 +92,78 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
     }
   }
 
+  Future<DateTime?> _pickDate(DateTime initialDate) {
+    final formatter = DateFormat('dd/MM/yyyy');
+    var selectedDate = initialDate;
+    final controller = TextEditingController();
+
+    return showDialog<DateTime>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select date'),
+          content: StatefulBuilder(
+            builder: (context, setDialogState) {
+              return SizedBox(
+                width: 320,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CalendarDatePicker(
+                      initialDate: selectedDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                      onDateChanged: (date) {
+                        setDialogState(() {
+                          selectedDate = date;
+                          controller.text = formatter.format(date);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: controller,
+                      autofocus: true,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        _DateInputFormatter(),
+                      ],
+                      decoration: const InputDecoration(hintText: 'dd/mm/yyyy'),
+                      onChanged: (value) {
+                        if (value.length != 10) return;
+                        try {
+                          final parsed = formatter.parseStrict(value);
+                          if (parsed.isBefore(DateTime(2020)) ||
+                              parsed.isAfter(DateTime.now())) {
+                            return;
+                          }
+                          setDialogState(() {
+                            selectedDate = parsed;
+                          });
+                        } catch (_) {}
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(selectedDate),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _save() async {
     final participant = _selectedParticipant;
     if (participant == null) {
@@ -104,11 +184,11 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
       return;
     }
     final parsedValues = values
-        .map((value) => double.tryParse(value))
+        .map((value) => double.tryParse(value.replaceAll(',', '.')))
         .toList(growable: false);
     if (parsedValues.any((value) => value == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid value.')),
+        const SnackBar(content: Text('Please enter valid numeric values.')),
       );
       return;
     }
@@ -134,19 +214,29 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
       int metricId;
 
       if (_mode == _ParameterMode.custom) {
-        metricId = await db.addMetric(
-          MetricsCompanion(
-            participantId: drift.Value(participant.id),
-            name: drift.Value(_customNameController.text.trim()),
-            unit: drift.Value(_unitController.text.trim()),
-          ),
+        final customName = _customNameController.text.trim();
+        final customUnit = _unitController.text.trim();
+        final existingMetric = findMatchingMetric(
+          metrics: _cachedMetrics,
+          participantId: participant.id,
+          name: customName,
+          unit: customUnit,
         );
+        metricId = existingMetric?.id ??
+            await db.addMetric(
+              MetricsCompanion(
+                participantId: drift.Value(participant.id),
+                name: drift.Value(customName),
+                unit: drift.Value(customUnit),
+              ),
+            );
       } else {
         final selectedParameter = _selectedParameter!;
-        final existingMetric = await db.getMetricForParticipantByName(
-          participant.id,
-          selectedParameter.name,
-          selectedParameter.unit,
+        final existingMetric = findMatchingMetric(
+          metrics: _cachedMetrics,
+          participantId: participant.id,
+          name: selectedParameter.name,
+          unit: selectedParameter.unit,
         );
         metricId = existingMetric?.id ??
             await db.addMetric(
@@ -159,7 +249,9 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
       }
 
       for (final entry in _valueEntries) {
-        final parsedValue = double.tryParse(entry.controller.text.trim());
+        final parsedValue = double.tryParse(
+          entry.controller.text.trim().replaceAll(',', '.'),
+        );
         if (parsedValue == null) continue;
         await db.addDataPoint(
           MetricDataPointsCompanion(
@@ -246,7 +338,8 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                 final metrics = metricsAsyncList
                     .expand((value) => value.value ?? <Metric>[])
                     .toList();
-                final parameters = _buildParameters(metrics);
+                final parameters = buildParameters(metrics);
+                _cachedMetrics = metrics;
 
                 _syncDefaults(
                   participants: participants,
@@ -365,7 +458,13 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                                     Expanded(
                                       child: TextField(
                                         controller: valueEntry.controller,
-                                        keyboardType: TextInputType.number,
+                                        keyboardType:
+                                            const TextInputType.numberWithOptions(
+                                          decimal: true,
+                                        ),
+                                        inputFormatters: [
+                                          _valueInputFormatter,
+                                        ],
                                         decoration: InputDecoration(
                                           hintText: valueHint,
                                           hintStyle: TextStyle(
@@ -381,12 +480,8 @@ class _HealthParameterSheetState extends ConsumerState<_HealthParameterSheet> {
                                         size: 18,
                                       ),
                                       onPressed: () async {
-                                        final picked = await showDatePicker(
-                                          context: context,
-                                          initialDate: valueEntry.date,
-                                          firstDate: DateTime(2020),
-                                          lastDate: DateTime.now(),
-                                        );
+                                        final picked =
+                                            await _pickDate(valueEntry.date);
                                         if (picked != null) {
                                           setState(() {
                                             _valueEntries[index] =
@@ -507,7 +602,10 @@ class _ValueEntry {
   final TextEditingController controller;
   final DateTime date;
 
-  const _ValueEntry({required this.controller, required this.date});
+  const _ValueEntry({
+    required this.controller,
+    required this.date,
+  });
 
   _ValueEntry copyWith({
     TextEditingController? controller,
@@ -520,13 +618,50 @@ class _ValueEntry {
   }
 }
 
-List<ChartParameter> _buildParameters(List<Metric> metrics) {
-  final parameters = <ChartParameter>{};
-
-  for (final metric in metrics) {
-    parameters.add(ChartParameter(name: metric.name, unit: metric.unit));
+class _DateInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length && i < 8; i++) {
+      buffer.write(digits[i]);
+      if (i == 1 || i == 3) {
+        buffer.write('/');
+      }
+    }
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
   }
+}
 
-  return parameters.toList()
-    ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+class _DecimalInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final sanitized = newValue.text.replaceAll(RegExp(r'[^0-9,\\.]'), '');
+    final buffer = StringBuffer();
+    var hasSeparator = false;
+    for (final char in sanitized.split('')) {
+      if (char == '.' || char == ',') {
+        if (hasSeparator) continue;
+        hasSeparator = true;
+        buffer.write(char);
+      } else {
+        buffer.write(char);
+      }
+    }
+    final result = buffer.toString();
+    return TextEditingValue(
+      text: result,
+      selection: TextSelection.collapsed(offset: result.length),
+    );
+  }
 }
